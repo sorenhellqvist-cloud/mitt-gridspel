@@ -1,6 +1,5 @@
 import random
 import time
-from datetime import datetime
 import streamlit as st
 
 # ==========================================
@@ -83,7 +82,7 @@ AVATARER = {
     "Katt": "🐱",
     "Utforskare": "🤠",
 }
-BOT_NICKNAMES = ["Bot_Alpha", "Bot_Beta", "Bot_Gamma", "Bot_Delta", "Bot_Epsilon"]
+BOT_NICKNAMES = ["Bot_Alpha", "Bot_Beta", "Bot_Gamma", "Bot_Delta"]
 
 # ==========================================
 # 2. INITIELISERING AV SESSION STATE
@@ -95,7 +94,6 @@ if "spelare_x" not in st.session_state:
     st.session_state.ryggsack = []
     st.session_state.antal_dorrar = 3
     st.session_state.rum_data = {}
-    st.session_state.chatt_logg = {}
     st.session_state.botar = [
         {
             "namn": BOT_NICKNAMES[i],
@@ -120,7 +118,6 @@ def hemta_rum_data(x, y):
 
         st.session_state.rum_data[nyckel] = {
             "oppna_dorrar": oppna,
-            "objekt": random.choice(["Lampa", "Hacka", None]),
             "fraga": fraga,
             "svars_val": val,
             "svarat_ratt": False,
@@ -163,14 +160,6 @@ with st.sidebar:
         st.session_state.rum_data = {}
         st.rerun()
 
-    st.divider()
-    st.subheader("🎒 Din Ryggsäck (Max 3)")
-    if st.session_state.ryggsack:
-        for item in st.session_state.ryggsack:
-            st.write(f"- {item}")
-    else:
-        st.write("*Ryggsäcken är tom*")
-
 current_nyckel = f"{st.session_state.spelare_x},{st.session_state.spelare_y}"
 rum = hemta_rum_data(st.session_state.spelare_x, st.session_state.spelare_y)
 
@@ -199,47 +188,42 @@ st.write(
 
 st.divider()
 
-# FRÅGEMOTOR MED TIMING OCH KNAPPAR
+# FRÅGEMOTOR MED KONTROLL MOT KEYERROR
 st.subheader(f"🏛️ Utmaning: {rum['fraga']['landmark']}")
 
-if not rum["svarat_ratt"]:
-    st.write("⏱️ **Du har 8 sekunder på dig att välja rätt stad!**")
+if not rum.get("svarat_ratt", False):
+    st.write("⏱️ **Du har 8 sekunder på dig från att du går in i rummet!**")
 
-    # Starta timern för rummet om den inte finns
-    if rum["start_tid"] is None:
+    # Sätt start_tid om den saknas
+    if rum.get("start_tid") is None:
         rum["start_tid"] = time.time()
 
-    tid_kvar = 8.0 - (time.time() - rum["start_tid"])
-
-    if tid_kvar > 0:
-        st.progress(max(0.0, min(1.0, tid_kvar / 8.0)))
-        st.caption(f"Tid kvar: {max(0.0, tid_kvar):.1f} sekunder")
-    else:
-        st.error(
-            "⏳ Tiden tog slut! Byt rum och kom tillbaka för att försöka igen."
-        )
-
-    # Visa svarsalternativ som egna knappar
-    cols = st.columns(1)
+    # Klicka på ett svarsalternativ
     for alt in rum["svars_val"]:
         if st.button(alt, key=f"btn_{current_nyckel}_{alt}"):
-            if time.time() - rum["start_tid"] > 8.0:
-                st.error("⏰ För sent! Tiden hade redan gått ut.")
+            tid_anvand = time.time() - rum["start_tid"]
+
+            if tid_anvand > 8.0:
+                st.error(
+                    f"⏰ För sent! Du tog {tid_anvand:.1f} sekunder på dig (max 8.0 s). Byt rum för att återställa."
+                )
             elif alt == rum["fraga"]["ratt_stad"]:
-                st.success("🎉 RÄTT SVAR! Dörrarna är nu upplåsta.")
+                st.success(
+                    f"🎉 RÄTT SVAR på {tid_anvand:.1f} sekunder! Dörrarna är nu upplåsta."
+                )
                 rum["svarat_ratt"] = True
                 st.rerun()
             else:
-                st.error("❌ Fel stad! Försök igen eller byt rum.")
+                st.error("❌ Fel stad! Försök igen.")
 else:
     st.success("✅ Du har klarat frågan i detta rum!")
 
 st.divider()
 
-# FÖRFLYTTNING / DÖRRAR
+# DÖRRAR / FÖRFLYTTNING
 st.subheader("🚪 Öppna dörrar")
 
-if not rum["svarat_ratt"]:
+if not rum.get("svarat_ratt", False):
     st.info("🔒 Svara rätt på frågan ovan för att låsa upp dörrarna!")
 else:
     col_w, col_a, col_s, col_d = st.columns(4)
