@@ -15,63 +15,123 @@ MAL_X, MAL_Y = 10, 10
 
 FRAGE_BANK = [
     {
-        "landmark": "Colosseum",
-        "ratt_stad": "Rom",
+        "landmark": "Akropolis",
+        "ratt_stad": "Aten",
         "falska_stader": [
-            "Paris",
-            "Madrid",
-            "Aten",
-            "Berlin",
-            "Lissabon",
-            "Prag",
+            "Rom",
+            "Istanbul",
+            "Kairo",
+            "Sofia",
+            "Neapel",
+            "Thessaloniki",
         ],
     },
     {
-        "landmark": "Eiffeltornet",
+        "landmark": "Brandenburger Tor",
+        "ratt_stad": "Berlin",
+        "falska_stader": [
+            "München",
+            "Hamburg",
+            "Wien",
+            "Prag",
+            "Warszawa",
+            "Köln",
+        ],
+    },
+    {
+        "landmark": "Marienplatz",
+        "ratt_stad": "München",
+        "falska_stader": [
+            "Berlin",
+            "Stuttgart",
+            "Wien",
+            "Salzburg",
+            "Zürich",
+            "Nürnberg",
+        ],
+    },
+    {
+        "landmark": "Elbphilharmonie",
+        "ratt_stad": "Hamburg",
+        "falska_stader": [
+            "Berlin",
+            "Bremen",
+            "Köpenhamn",
+            "Amsterdam",
+            "Hannover",
+            "Kiel",
+        ],
+    },
+    {
+        "landmark": "Zwinger",
+        "ratt_stad": "Dresden",
+        "falska_stader": [
+            "Leipzig",
+            "Berlin",
+            "Prag",
+            "Wien",
+            "Wrocław",
+            "Kraków",
+        ],
+    },
+    {
+        "landmark": "Atomium",
+        "ratt_stad": "Bryssel",
+        "falska_stader": [
+            "Antwerpen",
+            "Amsterdam",
+            "Paris",
+            "Luxemburg",
+            "Gent",
+            "Rotterdam",
+        ],
+    },
+    {
+        "landmark": "Manneken Pis",
+        "ratt_stad": "Bryssel",
+        "falska_stader": [
+            "Amsterdam",
+            "Brygge",
+            "Antwerpen",
+            "Paris",
+            "Köln",
+            "Luxemburg",
+        ],
+    },
+    {
+        "landmark": "Tower Bridge",
+        "ratt_stad": "London",
+        "falska_stader": [
+            "Paris",
+            "Dublin",
+            "Edinburgh",
+            "Amsterdam",
+            "Manchester",
+            "Liverpool",
+        ],
+    },
+    {
+        "landmark": "Louvren",
         "ratt_stad": "Paris",
         "falska_stader": [
             "London",
-            "Bryssel",
             "Rom",
-            "Wien",
-            "Amsterdam",
             "Madrid",
+            "Wien",
+            "Bryssel",
+            "Berlin",
         ],
     },
     {
-        "landmark": "Big Ben",
-        "ratt_stad": "London",
+        "landmark": "Vasamuseet",
+        "ratt_stad": "Stockholm",
         "falska_stader": [
-            "Dublin",
-            "Edinburgh",
-            "Paris",
-            "Berlin",
+            "Göteborg",
             "Oslo",
             "Köpenhamn",
-        ],
-    },
-    {
-        "landmark": "Frihetsgudinnan",
-        "ratt_stad": "New York",
-        "falska_stader": [
-            "Washington",
-            "Los Angeles",
-            "Chicago",
-            "Toronto",
-            "Miami",
-            "Boston",
-        ],
-    },
-    {
-        "landmark": "Sagrada Família",
-        "ratt_stad": "Barcelona",
-        "falska_stader": [
-            "Madrid",
-            "Sevilla",
-            "Valencia",
-            "Lissabon",
-            "Porto",
-            "Rom",
+            "Helsingfors",
+            "Malmö",
+            "Karlskrona",
         ],
     },
 ]
@@ -115,26 +175,36 @@ def hemta_rum_data(x, y):
         oppna = random.sample(
             alla_dir, min(st.session_state.antal_dorrar, len(alla_dir))
         )
+
         fraga = random.choice(FRAGE_BANK)
         falska = random.sample(fraga["falska_stader"], 4)
         val = falska + [fraga["ratt_stad"]]
         random.shuffle(val)
 
-        beloningar = [
-            "💎 Ädelsten",
+        objekt_lista = [
+            "🔦 Lampa",
+            "⛏️ Hacka",
             "🔑 Guldnyckel",
-            "📜 Gammal karta",
-            "🏆 Stadsmedalj",
-            "⭐ Stjärna",
+            "📜 Karta",
+            "🧭 Kompass",
         ]
+
+        # Räkna ut faktiskt avstånd (antal rutor) till målet (10,10)
+        exakt_avstand = abs(MAL_X - x) + abs(MAL_Y - y)
+        # Lägg till en liten slumpmässig avvikelse (-1, 0, eller +1) för "cirka"
+        variation = random.choice([-1, 0, 1])
+        cirka_avstand = max(1, exakt_avstand + variation)
 
         st.session_state.rum_data[nyckel] = {
             "oppna_dorrar": oppna,
             "fraga": fraga,
             "svars_val": val,
-            "beloning": random.choice(beloningar),
+            "objekt": random.choice(objekt_lista),
+            "cirka_avstand": cirka_avstand,
             "svarat": False,
-            "klarad": False,
+            "ratt_svarat": False,
+            "valj_beloning": False,
+            "vald_beloning_typ": None,  # 'objekt' eller 'ledtrad'
             "start_tid": None,
         }
     return st.session_state.rum_data[nyckel]
@@ -174,62 +244,43 @@ with st.sidebar:
     st.session_state.avatar = AVATARER[vald_avatar]
 
     st.divider()
-    st.subheader("🎒 Din Ryggsäck")
+    st.subheader("🎒 Din Ryggsäck (Max 3)")
     if st.session_state.ryggsack:
-        for item in st.session_state.ryggsack:
-            st.write(f"- {item}")
+        for idx, item in enumerate(st.session_state.ryggsack):
+            st.write(f"{idx+1}. {item}")
     else:
         st.write("*Ryggsäcken är tom*")
 
 current_nyckel = f"{st.session_state.spelare_x},{st.session_state.spelare_y}"
 rum = hemta_rum_data(st.session_state.spelare_x, st.session_state.spelare_y)
 
-# KAN KOLLA OM MAN ÄR I MÅL
 if st.session_state.spelare_x == MAL_X and st.session_state.spelare_y == MAL_Y:
     st.balloons()
     st.success("🎉 MÅL! Du har hittat hela vägen till Målrummet! 🏆")
 
-# --- RUMSFÖNSTER (DET SPELAREN SER) ---
+# --- BILDVISNING FRÅN BILDER-MAPPEN ---
+ratt_stad = rum["fraga"]["ratt_stad"]
+bild_sokvag = f"bilder/{ratt_stad}.png"
+
+try:
+    st.image(
+        bild_sokvag, caption=f"Landmärke i {ratt_stad}", width=350
+    )
+except Exception:
+    st.info(f"🖼️ [Bild saknas i mappen: bilder/{ratt_stad}.png]")
+
 st.subheader(
     f"📍 Rum ({st.session_state.spelare_x}, {st.session_state.spelare_y})"
 )
 
-# Finns det andra i rummet?
-botar_i_rummet = [
-    b
-    for b in st.session_state.botar
-    if b["x"] == st.session_state.spelare_x
-    and b["y"] == st.session_state.spelare_y
-]
-
-figurer_html = f"<div style='background-color: #2b2b2b; padding: 20px; border-radius: 12px; text-align: center; font-size: 30px; margin-bottom: 15px; border: 2px solid #444;'>"
-figurer_html += (
-    f"<span title='Du'> {st.session_state.avatar} </span>"  # Din avatar
-)
-
-for b in botar_i_rummet:
-    figurer_html += (
-        f"<span title='{b['namn']}'> {b['avatar']} </span>"  # Andra avatarer
-    )
-
-if st.session_state.spelare_x == MAL_X and st.session_state.spelare_y == MAL_Y:
-    figurer_html += " 🏆 "
-
-figurer_html += "</div>"
-st.markdown(figurer_html, unsafe_allow_html=True)
-
-if botar_i_rummet:
-    namn_lista = ", ".join([b["namn"] for b in botar_i_rummet])
-    st.info(f"👥 Du är inte ensam! I detta rum står också: **{namn_lista}**")
-
 st.divider()
 
-# --- FRÅGEMOTOR & UTMANING ---
+# --- FRÅGE- OCH BELÖNINGSMOTOR ---
 st.write(f"### 🏛️ Landmärke: {rum['fraga']['landmark']}")
 
-if not rum.get("svarat", False):
+if not rum["svarat"]:
     st.write(
-        f"🎁 **Svara rätt inom 8 sekunder för att låsa upp:** {rum['beloning']}!"
+        "⏱️ **Svara rätt inom 8 sekunder för att få välja en belöning!**"
     )
 
     if rum.get("start_tid") is None:
@@ -262,26 +313,49 @@ if not rum.get("svarat", False):
             rum["svarat"] = True
 
             if tid_anvand <= 8.0 and alt == rum["fraga"]["ratt_stad"]:
-                st.success(f"🎉 Rätt svar! Du vann **{rum['beloning']}**!")
-                st.session_state.ryggsack.append(rum["beloning"])
-                rum["klarad"] = True
-            elif tid_anvand > 8.0:
-                st.info("⏱️ Tiden gick ut! Ingen belöning i detta rum.")
-            else:
-                st.info("❌ Fel svar! Ingen belöning i detta rum.")
+                rum["ratt_svarat"] = True
+                rum["valj_beloning"] = True
             st.rerun()
+
+# Om spelaren svarat rätt – Ge valet mellan Objekt eller Ledtråd
+elif rum["valj_beloning"]:
+    st.success("🎉 RÄTT SVAR! Välj din belöning nedan:")
+
+    col_obj, col_led = st.columns(2)
+
+    with col_obj:
+        if st.button(f"🎒 Ta objekt: {rum['objekt']}"):
+            if len(st.session_state.ryggsack) < 3:
+                st.session_state.ryggsack.append(rum["objekt"])
+                rum["valj_beloning"] = False
+                rum["vald_beloning_typ"] = "objekt"
+                st.rerun()
+            else:
+                st.warning(
+                    "⚠️ Din ryggsäck är full (max 3 objekt)! Du måste byta eller välja ledtråd."
+                )
+
+    with col_led:
+        if st.button("💡 Få en Ledtråd"):
+            rum["valj_beloning"] = False
+            rum["vald_beloning_typ"] = "ledtrad"
+            st.rerun()
+
 else:
-    if rum.get("klarad", False):
-        st.success(
-            f"✅ Rummet är avklarat! Du plockade upp: {rum['beloning']}"
-        )
+    if rum["ratt_svarat"]:
+        if rum["vald_beloning_typ"] == "objekt":
+            st.success(f"🎁 Du har valt objektet: **{rum['objekt']}**")
+        elif rum["vald_beloning_typ"] == "ledtrad":
+            st.info(
+                f"💡 **LEDTRÅD:** Du är cirka **{rum['cirka_avstand']} rutor** från utgången!"
+            )
     else:
-        st.info("ℹ️ Du missade belöningen i detta rum.")
+        st.info("ℹ️ Tiden gick ut eller fel svar angavs. Ingen belöning!")
 
 st.divider()
 
 # --- FÖRFLYTTNING / DÖRRAR ---
-st.subheader("🚪 Öppna dörrar i rummet")
+st.subheader("🚪 Öppna dörrar")
 
 col_w, col_a, col_s, col_d = st.columns(4)
 
