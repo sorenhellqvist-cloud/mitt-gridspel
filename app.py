@@ -85,15 +85,12 @@ AVATARER = {
 }
 BOT_NICKNAMES = ["Bot_Alpha", "Bot_Beta", "Bot_Gamma", "Bot_Delta"]
 
-# ==========================================
-# 2. INITIELISERING AV SESSION STATE
-# ==========================================
-if "spelare_x" not in st.session_state:
+
+def nollstall_spel():
+    """Nollställer hela spelarens framsteg, position och rum."""
     st.session_state.spelare_x = 1
     st.session_state.spelare_y = 1
-    st.session_state.avatar = "🧙"
     st.session_state.ryggsack = []
-    st.session_state.antal_dorrar = 3
     st.session_state.rum_data = {}
     st.session_state.botar = [
         {
@@ -103,6 +100,15 @@ if "spelare_x" not in st.session_state:
         }
         for i in range(4)
     ]
+
+
+# ==========================================
+# 2. INITIELISERING AV SESSION STATE
+# ==========================================
+if "spelare_x" not in st.session_state:
+    st.session_state.avatar = "🧙"
+    st.session_state.antal_dorrar = 3
+    nollstall_spel()
 
 
 def hemta_rum_data(x, y):
@@ -117,7 +123,6 @@ def hemta_rum_data(x, y):
         val = falska + [fraga["ratt_stad"]]
         random.shuffle(val)
 
-        # Skapa ett pris/belöning för rummet
         beloningar = [
             "💎 Ädelsten",
             "🔑 Guldnyckel",
@@ -158,6 +163,13 @@ def flytta_botar():
 # ==========================================
 st.title("🏙️ Stadsäventyret 10x10")
 
+# HUVUDBUTTON FÖR ATT STARTA/RESETTA SPELET LÄNGST UPP
+col_top1, col_top2 = st.columns([3, 1])
+with col_top2:
+    if st.button("▶️ Starta om spelet", use_container_width=True):
+        nollstall_spel()
+        st.rerun()
+
 with st.sidebar:
     st.header("⚙️ Spelinställningar")
     vald_avatar = st.selectbox(
@@ -165,11 +177,8 @@ with st.sidebar:
     )
     st.session_state.avatar = AVATARER[vald_avatar]
 
-    if st.button("🔄 Starta om spelet"):
-        st.session_state.spelare_x = 1
-        st.session_state.spelare_y = 1
-        st.session_state.ryggsack = []
-        st.session_state.rum_data = {}
+    if st.button("🔄 Nollställ spelet", key="side_reset"):
+        nollstall_spel()
         st.rerun()
 
     st.divider()
@@ -208,7 +217,7 @@ st.write(
 
 st.divider()
 
-# FRÅGEMOTOR MELLAN SKÄRM & BELÖNING
+# FRÅGEMOTOR
 st.subheader(f"🏛️ Utmaning: {rum['fraga']['landmark']}")
 
 if not rum.get("svarat", False):
@@ -221,7 +230,7 @@ if not rum.get("svarat", False):
 
     tid_kvar_start = max(0.0, 8.0 - (time.time() - rum["start_tid"]))
 
-    # Time bar
+    # Live time bar
     timer_code = f"""
     <div style="width: 100%; background-color: #ddd; border-radius: 10px; height: 16px; overflow: hidden; margin-bottom: 12px;">
       <div id="bar" style="width: {(tid_kvar_start/8.0)*100}%; height: 100%; background-color: #ff4b4b; transition: width 0.1s linear;"></div>
@@ -241,7 +250,6 @@ if not rum.get("svarat", False):
     """
     components.html(timer_code, height=30)
 
-    # Knappar för svarsalternativen
     for alt in rum["svars_val"]:
         if st.button(alt, key=f"btn_{current_nyckel}_{alt}"):
             tid_anvand = time.time() - rum["start_tid"]
@@ -274,7 +282,7 @@ else:
 
 st.divider()
 
-# DÖRRAR / FÖRFLYTTNING (ALLTID TILLGÄNGLIGA!)
+# DÖRRAR / FÖRFLYTTNING
 st.subheader("🚪 Öppna dörrar")
 
 col_w, col_a, col_s, col_d = st.columns(4)
