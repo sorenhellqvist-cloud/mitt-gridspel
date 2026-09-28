@@ -1,6 +1,7 @@
 import random
 import time
 import streamlit as st
+import streamlit.components.v1 as components
 
 # ==========================================
 # 1. KONFIGURATION OCH SPELINSTÄLLNINGAR
@@ -116,11 +117,22 @@ def hemta_rum_data(x, y):
         val = falska + [fraga["ratt_stad"]]
         random.shuffle(val)
 
+        # Skapa ett pris/belöning för rummet
+        beloningar = [
+            "💎 Ädelsten",
+            "🔑 Guldnyckel",
+            "📜 Gammal karta",
+            "🏆 Stadsmedalj",
+            "⭐ Stjärna",
+        ]
+
         st.session_state.rum_data[nyckel] = {
             "oppna_dorrar": oppna,
             "fraga": fraga,
             "svars_val": val,
-            "svarat_ratt": False,
+            "beloning": random.choice(beloningar),
+            "svarat": False,
+            "klarad": False,
             "start_tid": None,
         }
     return st.session_state.rum_data[nyckel]
@@ -160,6 +172,14 @@ with st.sidebar:
         st.session_state.rum_data = {}
         st.rerun()
 
+    st.divider()
+    st.subheader("🎒 Din Ryggsäck")
+    if st.session_state.ryggsack:
+        for item in st.session_state.ryggsack:
+            st.write(f"- {item}")
+    else:
+        st.write("*Ryggsäcken är tom*")
+
 current_nyckel = f"{st.session_state.spelare_x},{st.session_state.spelare_y}"
 rum = hemta_rum_data(st.session_state.spelare_x, st.session_state.spelare_y)
 
@@ -188,71 +208,104 @@ st.write(
 
 st.divider()
 
-# FRÅGEMOTOR MED KONTROLL MOT KEYERROR
+# FRÅGEMOTOR MELLAN SKÄRM & BELÖNING
 st.subheader(f"🏛️ Utmaning: {rum['fraga']['landmark']}")
 
-if not rum.get("svarat_ratt", False):
-    st.write("⏱️ **Du har 8 sekunder på dig från att du går in i rummet!**")
+if not rum.get("svarat", False):
+    st.write(
+        f"🎁 **Svara rätt inom 8 sekunder för att vinna:** {rum['beloning']}!"
+    )
 
-    # Sätt start_tid om den saknas
     if rum.get("start_tid") is None:
         rum["start_tid"] = time.time()
 
-    # Klicka på ett svarsalternativ
+    tid_kvar_start = max(0.0, 8.0 - (time.time() - rum["start_tid"]))
+
+    # Time bar
+    timer_code = f"""
+    <div style="width: 100%; background-color: #ddd; border-radius: 10px; height: 16px; overflow: hidden; margin-bottom: 12px;">
+      <div id="bar" style="width: {(tid_kvar_start/8.0)*100}%; height: 100%; background-color: #ff4b4b; transition: width 0.1s linear;"></div>
+    </div>
+    <script>
+      var timeLeft = {tid_kvar_start};
+      var bar = document.getElementById('bar');
+      var interval = setInterval(function() {{
+        timeLeft -= 0.1;
+        if (timeLeft <= 0) {{
+          timeLeft = 0;
+          clearInterval(interval);
+        }}
+        bar.style.width = (timeLeft / 8.0 * 100) + '%';
+      }}, 100);
+    </script>
+    """
+    components.html(timer_code, height=30)
+
+    # Knappar för svarsalternativen
     for alt in rum["svars_val"]:
         if st.button(alt, key=f"btn_{current_nyckel}_{alt}"):
             tid_anvand = time.time() - rum["start_tid"]
+            rum["svarat"] = True
 
-            if tid_anvand > 8.0:
-                st.error(
-                    f"⏰ För sent! Du tog {tid_anvand:.1f} sekunder på dig (max 8.0 s). Byt rum för att återställa."
-                )
-            elif alt == rum["fraga"]["ratt_stad"]:
+            if tid_anvand <= 8.0 and alt == rum["fraga"]["ratt_stad"]:
                 st.success(
-                    f"🎉 RÄTT SVAR på {tid_anvand:.1f} sekunder! Dörrarna är nu upplåsta."
+                    f"🎉 Rätt svar på {tid_anvand:.1f} s! Du vann **{rum['beloning']}** till ryggsäcken."
                 )
-                rum["svarat_ratt"] = True
-                st.rerun()
+                st.session_state.ryggsack.append(rum["beloning"])
+                rum["klarad"] = True
+            elif tid_anvand > 8.0:
+                st.info(
+                    f"⏱️ Tiden gick ut ({tid_anvand:.1f} s). Du fick ingen belöning denna gång, men kan gå vidare!"
+                )
             else:
-                st.error("❌ Fel stad! Försök igen.")
+                st.info(
+                    "❌ Fel svar! Ingen belöning i detta rum, men du kan gå vidare."
+                )
+            st.rerun()
 else:
-    st.success("✅ Du har klarat frågan i detta rum!")
+    if rum.get("klarad", False):
+        st.success(
+            f"✅ Du har redan klarat detta rum och hämtat din belöning: {rum['beloning']}"
+        )
+    else:
+        st.info(
+            "ℹ️ Du har redan testat frågan i detta rum utan att nå belöningen. Välj en dörr nedan för att gå vidare!"
+        )
 
 st.divider()
 
-# DÖRRAR / FÖRFLYTTNING
+# DÖRRAR / FÖRFLYTTNING (ALLTID TILLGÄNGLIGA!)
 st.subheader("🚪 Öppna dörrar")
 
-if not rum.get("svarat_ratt", False):
-    st.info("🔒 Svara rätt på frågan ovan för att låsa upp dörrarna!")
-else:
-    col_w, col_a, col_s, col_d = st.columns(4)
+col_w, col_a, col_s, col_d = st.columns(4)
 
-    def flytta(riktning):
-        if riktning == "W" and st.session_state.spelare_y > 1:
-            st.session_state.spelare_y -= 1
-        elif riktning == "S" and st.session_state.spelare_y < STORLEK:
-            st.session_state.spelare_y += 1
-        elif riktning == "A" and st.session_state.spelare_x > 1:
-            st.session_state.spelare_x -= 1
-        elif riktning == "D" and st.session_state.spelare_x < STORLEK:
-            st.session_state.spelare_x += 1
-        flytta_botar()
-        st.rerun()
 
-    with col_w:
-        if "W" in rum["oppna_dorrar"]:
-            if st.button("⬆️ Norr (W)"):
-                flytta("W")
-    with col_s:
-        if "S" in rum["oppna_dorrar"]:
-            if st.button("⬇️ Söder (S)"):
-                flytta("S")
-    with col_a:
-        if "A" in rum["oppna_dorrar"]:
-            if st.button("⬅️ Väster (A)"):
-                flytta("A")
-    with col_d:
-        if "D" in rum["oppna_dorrar"]:
-            if st.button("➡️ Öster (D)"):
-                flytta("D")
+def flytta(riktning):
+    if riktning == "W" and st.session_state.spelare_y > 1:
+        st.session_state.spelare_y -= 1
+    elif riktning == "S" and st.session_state.spelare_y < STORLEK:
+        st.session_state.spelare_y += 1
+    elif riktning == "A" and st.session_state.spelare_x > 1:
+        st.session_state.spelare_x -= 1
+    elif riktning == "D" and st.session_state.spelare_x < STORLEK:
+        st.session_state.spelare_x += 1
+    flytta_botar()
+    st.rerun()
+
+
+with col_w:
+    if "W" in rum["oppna_dorrar"]:
+        if st.button("⬆️ Norr (W)"):
+            flytta("W")
+with col_s:
+    if "S" in rum["oppna_dorrar"]:
+        if st.button("⬇️ Söder (S)"):
+            flytta("S")
+with col_a:
+    if "A" in rum["oppna_dorrar"]:
+        if st.button("⬅️ Väster (A)"):
+            flytta("A")
+with col_d:
+    if "D" in rum["oppna_dorrar"]:
+        if st.button("➡️ Öster (D)"):
+            flytta("D")
