@@ -63,7 +63,17 @@ FRAGE_BANK = [
      "falska_stader": ["Kuala Lumpur", "Hongkong", "Bangkok", "Jakarta", "Manila", "Penang"]},
     {"landmark": "Operahuset", "ratt_stad": "Sydney", "bild": "sydney_operahuset.png",
      "falska_stader": ["Melbourne", "Brisbane", "Auckland", "Perth", "Adelaide", "Wellington"]},
+    {"landmark": "Hôtel van Eetvelde", "ratt_stad": "Bryssel", "bild": "bryssel_van-eetvelde.png",
+     "falska_stader": ["Wien", "Barcelona", "Riga", "Antwerpen", "Paris", "Prag"]},
+    {"landmark": "Frihetsgudinnan", "ratt_stad": "New York", "bild": "new-york_frihetsgudinnan.png",
+     "falska_stader": ["Boston", "Philadelphia", "Washington", "Chicago", "Paris", "Toronto"]},
+    {"landmark": "Colosseum", "ratt_stad": "Rom", "bild": "rom_colosseum.png",
+     "falska_stader": ["Verona", "Aten", "Neapel", "Nîmes", "Pula", "Milano"]},
 ]
+
+# Bara frågor vars bild finns i bilder-mappen används i spelet.
+# Lägger du till en bild som har en fråga här ovan kommer den med automatiskt.
+AKTIVA_FRAGOR = [f for f in FRAGE_BANK if (BILDMAPP / f["bild"]).exists()] or FRAGE_BANK
 
 
 FLYGPLAN = {
@@ -79,14 +89,16 @@ RIKTNINGAR = {"W": (0, -1), "S": (0, 1), "A": (-1, 0), "D": (1, 0)}
 MOTSATS = {"W": "S", "S": "W", "A": "D", "D": "A"}
 ETIKETTER = {"W": "↑ Norr", "A": "← Väster", "D": "Öster →", "S": "↓ Söder"}
 
-REGLER = (
-    f"Flyg från startrutan till målet. Båda ligger vid kanten av kartan, "
-    f"men aldrig vid samma kant, och du vet inte var målet är. "
-    f"I varje ny ruta landar du vid ett landmärke och har {int(TIDSGRANS)} sekunder "
-    f"på dig att svara vilken stad det ligger i. Rätt svar ger dig en ledtråd "
-    f"eller {BONUS_POANG} bonuspoäng. Har du {KOP_PRIS} bonuspoäng kan du köpa "
-    f"rätt svar när du svarat fel."
-)
+REGLER = [
+    "Spelet går ut på att flyga från startrutan till målet.",
+    f"Spelplanen är hundra rutor ordnade i {STORLEK} rader med {STORLEK} rutor i varje rad. "
+    "Startrutan ligger vid en kant av spelplanen och målet vid en annan kant.",
+    f"I varje ny ruta ser du en bild som ska ge dig en ledtråd om var du har landat, "
+    f"och du har {int(TIDSGRANS)} sekunder på dig att svara i vilken stad du landat.",
+    f"Rätt svar ger dig en ledtråd eller {BONUS_POANG} bonuspoäng. "
+    f"Har du {KOP_PRIS} bonuspoäng kan du köpa rätt svar när du svarat fel.",
+    "Du kan landa i en ruta som redan är avklarad, men då är det bara att flyga vidare.",
+]
 
 
 # ==========================================
@@ -184,7 +196,7 @@ def skapa_labyrint():
 def dra_fraga():
     """Drar frågor ur en blandad lek, så att alla används innan någon upprepas."""
     if not st.session_state.fragelek:
-        st.session_state.fragelek = random.sample(FRAGE_BANK, len(FRAGE_BANK))
+        st.session_state.fragelek = random.sample(AKTIVA_FRAGOR, len(AKTIVA_FRAGOR))
     return st.session_state.fragelek.pop()
 
 
@@ -298,7 +310,7 @@ font-family: 'Atkinson Hyperlegible', system-ui, -apple-system, sans-serif;
 
 .hangar { display: flex; justify-content: center; padding: 1.5rem 0 1rem; }
 .hangar svg { filter: drop-shadow(0 8px 6px rgba(20,33,61,0.25)); }
-.regler { color: var(--gra); font-size: 1rem; line-height: 1.5; margin: 0.5rem 0 1.2rem; }
+.regler { color: var(--gra); font-size: 1rem; line-height: 1.5; margin: 0 0 0.7rem; }
 
 .st-key-fragekort { background: var(--vit); border-radius: 18px; padding: 1rem 1rem 1.2rem; }
 
@@ -493,7 +505,7 @@ def startskarm():
         label_visibility="collapsed",
     )
     visa_html(f'<div class="hangar">{mitt_plan(240)}</div>')
-    visa_html(f'<p class="regler">{REGLER}</p>')
+    visa_html("".join(f'<p class="regler">{stycke}</p>' for stycke in REGLER))
     if st.button("Starta resan", type="primary", use_container_width=True):
         ss.spel_startat = True
         st.rerun()
@@ -512,7 +524,8 @@ if "spel_startat" not in ss or "mal" not in ss:
 
 with st.sidebar:
     st.header("Så spelar du")
-    st.write(REGLER)
+    for stycke in REGLER:
+        st.write(stycke)
     if ss.spel_startat:
         st.divider()
         if st.button("Börja om och byt flygplan", type="primary", use_container_width=True):
