@@ -83,6 +83,16 @@ FRAGE_BANK = [
      "falska_stader": ["Johannesburg", "Kapstaden", "Durban", "Nairobi", "Harare", "Windhoek"]},
     {"landmark": "Vita huset", "ratt_stad": "Washington", "bild": "washington_white-house.png",
      "falska_stader": ["New York", "Philadelphia", "Boston", "Baltimore", "Richmond", "Ottawa"]},
+    {"landmark": "Petronas Towers", "ratt_stad": "Kuala Lumpur", "bild": "kuala-lumpur_petronas-towers.png",
+     "falska_stader": ["Singapore", "Jakarta", "Bangkok", "Shanghai", "Hongkong", "Manila"]},
+    {"landmark": "Grundarnas monument", "ratt_stad": "Kiev", "bild": "kiev_grundarnas-monument.png",
+     "falska_stader": ["Moskva", "Minsk", "Odessa", "Lviv", "Warszawa", "Charkiv"]},
+    {"landmark": "Palacio de Bellas Artes", "ratt_stad": "Mexico City", "bild": "mexico-city_palacio-de-bellas-artes.png",
+     "falska_stader": ["Madrid", "Havanna", "Buenos Aires", "Bogotá", "Lima", "Guadalajara"]},
+    {"landmark": "Formel 1-banan", "ratt_stad": "Monaco", "bild": "monaco_race.png",
+     "falska_stader": ["Nice", "Cannes", "Marseille", "Genua", "Sanremo", "Barcelona"]},
+    {"landmark": "Singapore Flyer", "ratt_stad": "Singapore", "bild": "singapore_singapore-flyer.png",
+     "falska_stader": ["London", "Kuala Lumpur", "Hongkong", "Dubai", "Shanghai", "Bangkok"]},
 ]
 
 # Bara frågor vars bild finns i bilder-mappen används i spelet.
@@ -346,7 +356,6 @@ background: repeating-linear-gradient(90deg, var(--gul) 0 18px, transparent 18px
 88%  { transform: translate(-51%, 1px) rotate(-1deg); }
 100% { transform: translate(-50%, 0) rotate(0deg); }
 }
-.bildtext { font-size: 0.85rem; color: var(--gra); margin: 0.35rem 0 0; }
 .fraga-text { font-size: 0.95rem; color: var(--gra); margin: 0.8rem 0 0; }
 .landmark { font-size: 1.9rem; font-weight: 700; margin: 0 0 0.6rem; line-height: 1.15; color: var(--ink); }
 
@@ -607,7 +616,6 @@ ratt_stad = rum["fraga"]["ratt_stad"]
 
 with st.container(key="fragekort"):
     rita_scen(rum, animera)
-    visa_html(f'<p class="bildtext">Landmärke i {ratt_stad}</p>')
 
     if ss.redan_klarad:
         visa_html('<div class="resultat info">Här har du varit. <span>Flyg vidare!</span></div>')
