@@ -69,6 +69,20 @@ FRAGE_BANK = [
      "falska_stader": ["Boston", "Philadelphia", "Washington", "Chicago", "Paris", "Toronto"]},
     {"landmark": "Colosseum", "ratt_stad": "Rom", "bild": "rom_colosseum.png",
      "falska_stader": ["Verona", "Aten", "Neapel", "Nîmes", "Pula", "Milano"]},
+    {"landmark": "Kedjebron", "ratt_stad": "Budapest", "bild": "budapest_kedjebron.png",
+     "falska_stader": ["Wien", "Prag", "Bratislava", "Belgrad", "Zagreb", "Ljubljana"]},
+    {"landmark": "Boudhanath-stupan", "ratt_stad": "Kathmandu", "bild": "kathmandu_boudhanath.png",
+     "falska_stader": ["Lhasa", "Thimphu", "Delhi", "Varanasi", "Pokhara", "Dhaka"]},
+    {"landmark": "Abbey Road Studios", "ratt_stad": "London", "bild": "london_abbey-road.png",
+     "falska_stader": ["Liverpool", "Manchester", "Dublin", "Birmingham", "Edinburgh", "New York"]},
+    {"landmark": "Plaza Mayor", "ratt_stad": "Madrid", "bild": "madrid_plaza-mayor.png",
+     "falska_stader": ["Salamanca", "Barcelona", "Sevilla", "Valladolid", "Lissabon", "Mexico City"]},
+    {"landmark": "Operahuset", "ratt_stad": "Oslo", "bild": "oslo_operahuset.png",
+     "falska_stader": ["Bergen", "Köpenhamn", "Stockholm", "Helsingfors", "Reykjavik", "Göteborg"]},
+    {"landmark": "Union Buildings", "ratt_stad": "Pretoria", "bild": "pretoria_union-buildings.png",
+     "falska_stader": ["Johannesburg", "Kapstaden", "Durban", "Nairobi", "Harare", "Windhoek"]},
+    {"landmark": "Vita huset", "ratt_stad": "Washington", "bild": "washington_white-house.png",
+     "falska_stader": ["New York", "Philadelphia", "Boston", "Baltimore", "Richmond", "Ottawa"]},
 ]
 
 # Bara frågor vars bild finns i bilder-mappen används i spelet.
