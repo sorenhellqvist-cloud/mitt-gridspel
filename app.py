@@ -1,6 +1,7 @@
 import base64
 import math
 import random
+import re
 import time
 from pathlib import Path
 import streamlit as st
@@ -17,87 +18,168 @@ RADER = "ABCDEFGHIJ"  # rader A–J uppifrån och ned, kolumner 1–10 från vä
 MIN_AVSTAND = 8       # minsta antal steg mellan start och mål (0 = ingen gräns)
 TIDSGRANS = 8.0       # sekunder att svara på
 LANDNINGSTID = 1.8    # sekunder innan frågan dyker upp (planet landar)
+AVGANGSTID = 1.5      # sekunder som planet lyfter innan det flyger till nästa ruta
 BONUS_POANG = 100     # poäng för att välja flygbonus
 KOP_PRIS = 300        # vad det kostar att köpa rätt svar
 BILDMAPP = Path(__file__).parent / "bilder"
 EXTRA_DORR_ANDEL = 0.25  # andel extra dörrar utöver labyrintens grundgångar
 
 FRAGE_BANK = [
+    # --- Europa ---
     {"landmark": "Akropolis", "ratt_stad": "Aten", "bild": "aten_akropolis.png",
-     "falska_stader": ["Rom", "Istanbul", "Kairo", "Sofia", "Neapel", "Thessaloniki"]},
+     "falska_stader": ["Rom", "Istanbul", "Kairo", "Sofia", "Neapel", "Thessaloniki"],
+     "fakta": "Klippan mitt i staden där templet Parthenon byggdes på 400-talet före Kristus, till gudinnan Athenas ära."},
     {"landmark": "Brandenburger Tor", "ratt_stad": "Berlin", "bild": "berlin_brandenburger-tor.png",
-     "falska_stader": ["München", "Hamburg", "Wien", "Prag", "Warszawa", "Köln"]},
+     "falska_stader": ["München", "Hamburg", "Wien", "Prag", "Warszawa", "Köln"],
+     "fakta": "En stadsport från 1791. Under kalla kriget stod den precis vid Berlinmuren, och i dag är den en symbol för Tysklands återförening 1990."},
     {"landmark": "Marienplatz", "ratt_stad": "München", "bild": "munchen_marienplatz.png",
-     "falska_stader": ["Berlin", "Stuttgart", "Wien", "Salzburg", "Zürich", "Nürnberg"]},
+     "falska_stader": ["Berlin", "Stuttgart", "Wien", "Salzburg", "Zürich", "Nürnberg"],
+     "fakta": "Stadens stora torg. I tornet på Nya rådhuset finns ett klockspel där figurer dansar och rider tornerspel varje dag."},
     {"landmark": "Elbphilharmonie", "ratt_stad": "Hamburg", "bild": "hamburg_elbphilharmonie.png",
-     "falska_stader": ["Berlin", "Bremen", "Köpenhamn", "Amsterdam", "Hannover", "Kiel"]},
+     "falska_stader": ["Berlin", "Bremen", "Köpenhamn", "Amsterdam", "Hannover", "Kiel"],
+     "fakta": "Ett konserthus som invigdes 2017. Det är byggt ovanpå ett gammalt lagerhus i hamnen, och taket ser ut som vågor."},
     {"landmark": "Zwinger", "ratt_stad": "Dresden", "bild": "dresden_zwinger.png",
-     "falska_stader": ["Leipzig", "Berlin", "Prag", "Wien", "Wrocław", "Kraków"]},
+     "falska_stader": ["Leipzig", "Berlin", "Prag", "Wien", "Wrocław", "Kraków"],
+     "fakta": "Ett barockpalats från början av 1700-talet, byggt åt kung August den starke. Det förstördes nästan helt i bombningarna 1945 men har byggts upp igen."},
     {"landmark": "Atomium", "ratt_stad": "Bryssel", "bild": "bryssel_atomium.png",
-     "falska_stader": ["Antwerpen", "Amsterdam", "Paris", "Luxemburg", "Gent", "Rotterdam"]},
+     "falska_stader": ["Antwerpen", "Amsterdam", "Paris", "Luxemburg", "Gent", "Rotterdam"],
+     "fakta": "Byggdes till världsutställningen 1958. Det föreställer en järnkristall som har förstorats 165 miljarder gånger."},
     {"landmark": "Manneken Pis", "ratt_stad": "Bryssel", "bild": "bryssel_manneken-pis.png",
-     "falska_stader": ["Amsterdam", "Brygge", "Antwerpen", "Paris", "Köln", "Luxemburg"]},
-    {"landmark": "Tower Bridge", "ratt_stad": "London", "bild": "london_tower-bridge.png",
-     "falska_stader": ["Paris", "Dublin", "Edinburgh", "Amsterdam", "Manchester", "Liverpool"]},
-    {"landmark": "Louvren", "ratt_stad": "Paris", "bild": "paris_louvren.png",
-     "falska_stader": ["London", "Rom", "Madrid", "Wien", "Bryssel", "Berlin"]},
-    {"landmark": "Vasamuseet", "ratt_stad": "Stockholm", "bild": "stockholm_vasamuseet.png",
-     "falska_stader": ["Göteborg", "Oslo", "Köpenhamn", "Helsingfors", "Malmö", "Karlskrona"]},
-    {"landmark": "CN Tower", "ratt_stad": "Toronto", "bild": "toronto_cn-tower.png",
-     "falska_stader": ["Montréal", "Vancouver", "Ottawa", "Chicago", "Calgary", "Seattle"]},
-    {"landmark": "Karlsbron", "ratt_stad": "Prag", "bild": "prag_karlsbron.png",
-     "falska_stader": ["Wien", "Budapest", "Bratislava", "Kraków", "Brno", "Ljubljana"]},
-    {"landmark": "Stadshuset", "ratt_stad": "Stockholm", "bild": "stockholm_stadshuset.png",
-     "falska_stader": ["Göteborg", "Oslo", "Köpenhamn", "Helsingfors", "Malmö", "Uppsala"]},
-    {"landmark": "Golden Gate-bron", "ratt_stad": "San Francisco", "bild": "san-francisco_golden-gate.png",
-     "falska_stader": ["Los Angeles", "Seattle", "Lissabon", "Vancouver", "San Diego", "Oakland"]},
-    {"landmark": "Burj al Arab", "ratt_stad": "Dubai", "bild": "dubai_burj-al-arab.png",
-     "falska_stader": ["Abu Dhabi", "Doha", "Riyadh", "Muscat", "Bahrain", "Kuwait City"]},
-    {"landmark": "Ponte Vecchio", "ratt_stad": "Florens", "bild": "florens_ponte-vecchio.png",
-     "falska_stader": ["Venedig", "Pisa", "Bologna", "Siena", "Verona", "Rom"]},
-    {"landmark": "Vasilijkatedralen", "ratt_stad": "Moskva", "bild": "moskva_vasilijkatedralen.png",
-     "falska_stader": ["Sankt Petersburg", "Kiev", "Minsk", "Kazan", "Novgorod", "Warszawa"]},
-    {"landmark": "Nyhavn", "ratt_stad": "Köpenhamn", "bild": "kopenhamn_nyhavn.png",
-     "falska_stader": ["Stockholm", "Oslo", "Amsterdam", "Hamburg", "Bergen", "Malmö"]},
-    {"landmark": "Raffles Hotel", "ratt_stad": "Singapore", "bild": "singapore_raffles-hotel.png",
-     "falska_stader": ["Kuala Lumpur", "Hongkong", "Bangkok", "Jakarta", "Manila", "Penang"]},
-    {"landmark": "Operahuset", "ratt_stad": "Sydney", "bild": "sydney_operahuset.png",
-     "falska_stader": ["Melbourne", "Brisbane", "Auckland", "Perth", "Adelaide", "Wellington"]},
+     "falska_stader": ["Amsterdam", "Brygge", "Antwerpen", "Paris", "Köln", "Luxemburg"],
+     "fakta": "En liten bronsstaty av en kissande pojke, bara drygt en halvmeter hög. Han har över tusen dräkter som han klär ut sig i vid olika tillfällen."},
     {"landmark": "Hôtel van Eetvelde", "ratt_stad": "Bryssel", "bild": "bryssel_van-eetvelde.png",
-     "falska_stader": ["Wien", "Barcelona", "Riga", "Antwerpen", "Paris", "Prag"]},
-    {"landmark": "Frihetsgudinnan", "ratt_stad": "New York", "bild": "new-york_frihetsgudinnan.png",
-     "falska_stader": ["Boston", "Philadelphia", "Washington", "Chicago", "Paris", "Toronto"]},
-    {"landmark": "Colosseum", "ratt_stad": "Rom", "bild": "rom_colosseum.png",
-     "falska_stader": ["Verona", "Aten", "Neapel", "Nîmes", "Pula", "Milano"]},
-    {"landmark": "Kedjebron", "ratt_stad": "Budapest", "bild": "budapest_kedjebron.png",
-     "falska_stader": ["Wien", "Prag", "Bratislava", "Belgrad", "Zagreb", "Ljubljana"]},
-    {"landmark": "Boudhanath-stupan", "ratt_stad": "Kathmandu", "bild": "kathmandu_boudhanath.png",
-     "falska_stader": ["Lhasa", "Thimphu", "Delhi", "Varanasi", "Pokhara", "Dhaka"]},
+     "falska_stader": ["Wien", "Barcelona", "Riga", "Antwerpen", "Paris", "Prag"],
+     "fakta": "Ett hus i jugendstil som arkitekten Victor Horta ritade på 1890-talet. Det finns med på Unescos världsarvslista."},
+    {"landmark": "Tower Bridge", "ratt_stad": "London", "bild": "london_tower-bridge.png",
+     "falska_stader": ["Paris", "Dublin", "Edinburgh", "Amsterdam", "Manchester", "Liverpool"],
+     "fakta": "En bro över Themsen som invigdes 1894. Mittendelarna kan fällas upp så att höga fartyg kan passera."},
     {"landmark": "Abbey Road Studios", "ratt_stad": "London", "bild": "london_abbey-road.png",
-     "falska_stader": ["Liverpool", "Manchester", "Dublin", "Birmingham", "Edinburgh", "New York"]},
-    {"landmark": "Plaza Mayor", "ratt_stad": "Madrid", "bild": "madrid_plaza-mayor.png",
-     "falska_stader": ["Salamanca", "Barcelona", "Sevilla", "Valladolid", "Lissabon", "Mexico City"]},
+     "falska_stader": ["Liverpool", "Manchester", "Dublin", "Birmingham", "Edinburgh", "New York"],
+     "fakta": "Inspelningsstudion där Beatles spelade in de flesta av sina låtar. Övergångsstället utanför blev världskänt genom omslaget till skivan Abbey Road 1969."},
+    {"landmark": "Radcliffe Camera", "ratt_stad": "Oxford", "bild": "oxford_radcliffe-camera.png",
+     "falska_stader": ["Cambridge", "London", "Edinburgh", "Bath", "York", "Dublin"],
+     "fakta": "En rund biblioteksbyggnad från 1749 som tillhör Oxfords universitet. Camera betyder rum på latin."},
+    {"landmark": "Louvren", "ratt_stad": "Paris", "bild": "paris_louvren.png",
+     "falska_stader": ["London", "Rom", "Madrid", "Wien", "Bryssel", "Berlin"],
+     "fakta": "Ett av världens största konstmuseer, där bland annat Mona Lisa hänger. Glaspyramiden vid entrén byggdes 1989."},
+    {"landmark": "Vasamuseet", "ratt_stad": "Stockholm", "bild": "stockholm_vasamuseet.png",
+     "falska_stader": ["Göteborg", "Oslo", "Köpenhamn", "Helsingfors", "Malmö", "Karlskrona"],
+     "fakta": "Här står regalskeppet Vasa, som sjönk på sin första resa 1628 bara en dryg kilometer från kajen. Skeppet bärgades 1961 och är nästan helt bevarat."},
+    {"landmark": "Stadshuset", "ratt_stad": "Stockholm", "bild": "stockholm_stadshuset.png",
+     "falska_stader": ["Göteborg", "Oslo", "Köpenhamn", "Helsingfors", "Malmö", "Uppsala"],
+     "fakta": "Invigdes 1923 och har tre kronor i guld på tornet. Här hålls Nobelfesten varje år i december."},
     {"landmark": "Operahuset", "ratt_stad": "Oslo", "bild": "oslo_operahuset.png",
-     "falska_stader": ["Bergen", "Köpenhamn", "Stockholm", "Helsingfors", "Reykjavik", "Göteborg"]},
-    {"landmark": "Union Buildings", "ratt_stad": "Pretoria", "bild": "pretoria_union-buildings.png",
-     "falska_stader": ["Johannesburg", "Kapstaden", "Durban", "Nairobi", "Harare", "Windhoek"]},
-    {"landmark": "Vita huset", "ratt_stad": "Washington", "bild": "washington_white-house.png",
-     "falska_stader": ["New York", "Philadelphia", "Boston", "Baltimore", "Richmond", "Ottawa"]},
-    {"landmark": "Petronas Towers", "ratt_stad": "Kuala Lumpur", "bild": "kuala-lumpur_petronas-towers.png",
-     "falska_stader": ["Singapore", "Jakarta", "Bangkok", "Shanghai", "Hongkong", "Manila"]},
+     "falska_stader": ["Bergen", "Köpenhamn", "Stockholm", "Helsingfors", "Reykjavik", "Göteborg"],
+     "fakta": "Invigdes 2008 och ligger vid vattnet i Bjørvika. Man kan promenera på det sluttande vita taket ända upp till toppen."},
+    {"landmark": "Nyhavn", "ratt_stad": "Köpenhamn", "bild": "kopenhamn_nyhavn.png",
+     "falska_stader": ["Stockholm", "Oslo", "Amsterdam", "Hamburg", "Bergen", "Malmö"],
+     "fakta": "En kanal från 1670-talet med färgglada hus längs kajerna. Sagoförfattaren H.C. Andersen bodde här under flera perioder av sitt liv."},
+    {"landmark": "Erasmusbron", "ratt_stad": "Rotterdam", "bild": "rotterdam_Erasmus-bron.png",
+     "falska_stader": ["Amsterdam", "Antwerpen", "Haag", "Utrecht", "Hamburg", "Bryssel"],
+     "fakta": "En vit bro över floden Maas som invigdes 1996. På grund av formen kallas den för Svanen."},
+    {"landmark": "Karlsbron", "ratt_stad": "Prag", "bild": "prag_karlsbron.png",
+     "falska_stader": ["Wien", "Budapest", "Bratislava", "Kraków", "Brno", "Ljubljana"],
+     "fakta": "En stenbro över floden Moldau som började byggas 1357. Längs räckena står 30 statyer av helgon."},
+    {"landmark": "Kedjebron", "ratt_stad": "Budapest", "bild": "budapest_kedjebron.png",
+     "falska_stader": ["Wien", "Prag", "Bratislava", "Belgrad", "Zagreb", "Ljubljana"],
+     "fakta": "Den första fasta bron över Donau mellan stadsdelarna Buda och Pest, invigd 1849. Vid brofästena vaktar stora lejon av sten."},
+    {"landmark": "Parlamentspalatset", "ratt_stad": "Bukarest", "bild": "bucharest_palace-of-parliamen.png",
+     "falska_stader": ["Sofia", "Belgrad", "Budapest", "Chișinău", "Minsk", "Warszawa"],
+     "fakta": "En av världens största byggnader, med över tusen rum. Den byggdes på 1980-talet på order av diktatorn Nicolae Ceaușescu."},
     {"landmark": "Grundarnas monument", "ratt_stad": "Kiev", "bild": "kiev_grundarnas-monument.png",
-     "falska_stader": ["Moskva", "Minsk", "Odessa", "Lviv", "Warszawa", "Charkiv"]},
-    {"landmark": "Palacio de Bellas Artes", "ratt_stad": "Mexico City", "bild": "mexico-city_palacio-de-bellas-artes.png",
-     "falska_stader": ["Madrid", "Havanna", "Buenos Aires", "Bogotá", "Lima", "Guadalajara"]},
+     "falska_stader": ["Moskva", "Minsk", "Odessa", "Lviv", "Warszawa", "Charkiv"],
+     "fakta": "En skulptur av en båt med bröderna Kyj, Sjtjek och Choryv och deras syster Lybid, som enligt legenden grundade staden. Den restes 1982 när staden firade 1500 år."},
+    {"landmark": "Vasilijkatedralen", "ratt_stad": "Moskva", "bild": "moskva_vasilijkatedralen.png",
+     "falska_stader": ["Sankt Petersburg", "Kiev", "Minsk", "Kazan", "Novgorod", "Warszawa"],
+     "fakta": "Kyrkan vid Röda torget med färgglada lökkupoler. Den byggdes på 1550-talet på order av tsar Ivan den förskräcklige."},
+    {"landmark": "Colosseum", "ratt_stad": "Rom", "bild": "rom_colosseum.png",
+     "falska_stader": ["Verona", "Aten", "Neapel", "Nîmes", "Pula", "Milano"],
+     "fakta": "En amfiteater som invigdes år 80 efter Kristus. Här kunde minst 50 000 åskådare se gladiatorer slåss."},
+    {"landmark": "Ponte Vecchio", "ratt_stad": "Florens", "bild": "florens_ponte-vecchio.png",
+     "falska_stader": ["Venedig", "Pisa", "Bologna", "Siena", "Verona", "Rom"],
+     "fakta": "En medeltida bro över floden Arno med butiker byggda direkt på bron. I dag säljs mest guld och smycken där."},
+    {"landmark": "Domkyrkan Santa Maria del Fiore", "ratt_stad": "Florens", "bild": "florens_santa-maria-de-flori.png",
+     "falska_stader": ["Siena", "Pisa", "Milano", "Bologna", "Venedig", "Rom"],
+     "fakta": "Stadens domkyrka. Den enorma kupolen ritades av Filippo Brunelleschi och blev klar 1436."},
     {"landmark": "Formel 1-banan", "ratt_stad": "Monaco", "bild": "monaco_race.png",
-     "falska_stader": ["Nice", "Cannes", "Marseille", "Genua", "Sanremo", "Barcelona"]},
+     "falska_stader": ["Nice", "Cannes", "Marseille", "Genua", "Sanremo", "Barcelona"],
+     "fakta": "Monacos Grand Prix har körts på stadens gator sedan 1929. Bilarna kör bland annat genom en tunnel och längs hamnen."},
+    {"landmark": "Plaza Mayor", "ratt_stad": "Madrid", "bild": "madrid_plaza-mayor.png",
+     "falska_stader": ["Salamanca", "Barcelona", "Sevilla", "Valladolid", "Lissabon", "Mexico City"],
+     "fakta": "Ett stort torg från 1600-talet, omgivet av hus med över 200 balkonger. Här har det hållits marknader, fester och tjurfäktningar."},
+    {"landmark": "Alcázar", "ratt_stad": "Segovia", "bild": "segovia_alczar.png",
+     "falska_stader": ["Toledo", "Salamanca", "Madrid", "Sevilla", "Granada", "Ávila"],
+     "fakta": "En medeltida borg högt uppe på en klippa. Den sägs ha inspirerat Walt Disneys sagoslott."},
+
+    # --- Nordamerika ---
+    {"landmark": "Frihetsgudinnan", "ratt_stad": "New York", "bild": "new-york_frihetsgudinnan.png",
+     "falska_stader": ["Boston", "Philadelphia", "Washington", "Chicago", "Paris", "Toronto"],
+     "fakta": "En gåva till USA från det franska folket, som en symbol för att fira hundraårsminnet av USA:s självständighet. Invigd 1886."},
+    {"landmark": "Vita huset", "ratt_stad": "Washington", "bild": "washington_white-house.png",
+     "falska_stader": ["New York", "Philadelphia", "Boston", "Baltimore", "Richmond", "Ottawa"],
+     "fakta": "USA:s presidents bostad och arbetsplats sedan år 1800. Brittiska soldater satte eld på huset 1814, men det byggdes upp igen."},
+    {"landmark": "Golden Gate-bron", "ratt_stad": "San Francisco", "bild": "san-francisco_golden-gate.png",
+     "falska_stader": ["Los Angeles", "Seattle", "Lissabon", "Vancouver", "San Diego", "Oakland"],
+     "fakta": "En hängbro som öppnade 1937. Den orangeröda färgen valdes bland annat för att bron ska synas bra i stadens täta dimma."},
+    {"landmark": "CN Tower", "ratt_stad": "Toronto", "bild": "toronto_cn-tower.png",
+     "falska_stader": ["Montréal", "Vancouver", "Ottawa", "Chicago", "Calgary", "Seattle"],
+     "fakta": "Ett 553 meter högt torn som invigdes 1976. I över 30 år var det världens högsta fristående byggnadsverk."},
+    {"landmark": "Palacio de Bellas Artes", "ratt_stad": "Mexico City", "bild": "mexico-city_palacio-de-bellas-artes.png",
+     "falska_stader": ["Madrid", "Havanna", "Buenos Aires", "Bogotá", "Lima", "Guadalajara"],
+     "fakta": "Ett konsthus och en teater med en kupol täckt av gult och orange kakel. Bygget började 1904 men blev inte klart förrän 1934."},
+
+    # --- Asien ---
+    {"landmark": "Burj al Arab", "ratt_stad": "Dubai", "bild": "dubai_burj-al-arab.png",
+     "falska_stader": ["Abu Dhabi", "Doha", "Riyadh", "Muscat", "Bahrain", "Kuwait City"],
+     "fakta": "Ett lyxhotell från 1999 som ligger på en konstgjord ö. Formen ska likna ett segel."},
+    {"landmark": "Boudhanath-stupan", "ratt_stad": "Kathmandu", "bild": "kathmandu_boudhanath.png",
+     "falska_stader": ["Lhasa", "Thimphu", "Delhi", "Varanasi", "Pokhara", "Dhaka"],
+     "fakta": "En av världens största stupor, ett slags buddhistiskt helgedomsmonument. Från tornet blickar Buddhas ögon ut åt alla fyra väderstreck."},
+    {"landmark": "Petronas Towers", "ratt_stad": "Kuala Lumpur", "bild": "kuala-lumpur_petronas-towers.png",
+     "falska_stader": ["Singapore", "Jakarta", "Bangkok", "Shanghai", "Hongkong", "Manila"],
+     "fakta": "Två 452 meter höga skyskrapor som stod klara 1998 och var världens högsta byggnader fram till 2004. En gångbro förbinder tornen högt upp."},
+    {"landmark": "Raffles Hotel", "ratt_stad": "Singapore", "bild": "singapore_raffles-hotel.png",
+     "falska_stader": ["Kuala Lumpur", "Hongkong", "Bangkok", "Jakarta", "Manila", "Penang"],
+     "fakta": "Ett hotell från 1887, uppkallat efter stadens grundare Stamford Raffles. Drinken Singapore Sling uppfanns i hotellets bar."},
     {"landmark": "Singapore Flyer", "ratt_stad": "Singapore", "bild": "singapore_singapore-flyer.png",
-     "falska_stader": ["London", "Kuala Lumpur", "Hongkong", "Dubai", "Shanghai", "Bangkok"]},
+     "falska_stader": ["London", "Kuala Lumpur", "Hongkong", "Dubai", "Shanghai", "Bangkok"],
+     "fakta": "Ett 165 meter högt pariserhjul som öppnade 2008. Ett varv tar ungefär en halvtimme."},
+
+    # --- Afrika ---
+    {"landmark": "Union Buildings", "ratt_stad": "Pretoria", "bild": "pretoria_union-buildings.png",
+     "falska_stader": ["Johannesburg", "Kapstaden", "Durban", "Nairobi", "Harare", "Windhoek"],
+     "fakta": "Sydafrikas regeringsbyggnad, klar 1913. Här svors Nelson Mandela in som landets första demokratiskt valda president 1994."},
+
+    # --- Oceanien ---
+    {"landmark": "Operahuset", "ratt_stad": "Sydney", "bild": "sydney_operahuset.png",
+     "falska_stader": ["Melbourne", "Brisbane", "Auckland", "Perth", "Adelaide", "Wellington"],
+     "fakta": "Invigdes 1973. Taket med sina vita skal ritades av den danske arkitekten Jørn Utzon."},
+    {"landmark": "Flinders Street Station", "ratt_stad": "Melbourne", "bild": "melburn_flinders-street-station.png",
+     "falska_stader": ["Sydney", "Brisbane", "Adelaide", "Perth", "Auckland", "Wellington"],
+     "fakta": "Stadens stora järnvägsstation, med en byggnad från början av 1900-talet. Att mötas under klockorna vid entrén är ett klassiskt sätt att bestämma träff."},
 ]
 
+
+def filnyckel(namn):
+    """Jämför filnamn utan hänsyn till stora/små bokstäver, mellanslag, _ - och punkt."""
+    return re.sub(r"[^a-z0-9]", "", namn.lower())
+
+
+def las_bildmapp():
+    if not BILDMAPP.is_dir():
+        return {}
+    return {filnyckel(p.name): p for p in BILDMAPP.iterdir() if p.is_file()}
+
+
+BILDFILER = las_bildmapp()
+
+
+def hitta_bild(fil):
+    return BILDFILER.get(filnyckel(fil))
+
+
 # Bara frågor vars bild finns i bilder-mappen används i spelet.
-# Lägger du till en bild som har en fråga här ovan kommer den med automatiskt.
-AKTIVA_FRAGOR = [f for f in FRAGE_BANK if (BILDMAPP / f["bild"]).exists()] or FRAGE_BANK
+AKTIVA_FRAGOR = [f for f in FRAGE_BANK if hitta_bild(f["bild"])] or FRAGE_BANK
 
 
 FLYGPLAN = {
@@ -112,6 +194,7 @@ FLYGPLAN = {
 RIKTNINGAR = {"W": (0, -1), "S": (0, 1), "A": (-1, 0), "D": (1, 0)}
 MOTSATS = {"W": "S", "S": "W", "A": "D", "D": "A"}
 ETIKETTER = {"W": "↑ Norr", "A": "← Väster", "D": "Öster →", "S": "↓ Söder"}
+VADERSTRECK = {"W": "norr", "A": "väster", "D": "öster", "S": "söder"}
 
 REGLER = [
     "Spelet går ut på att flyga från startrutan till målet.",
@@ -236,6 +319,7 @@ def nollstall_spel():
     ss.mal_firat = False
     ss.landning_nyckel = None  # rummet där planet senast landade
     ss.redan_klarad = False    # om rummet var klarat redan när planet landade
+    ss.avgang = None           # vald riktning och starttid medan planet lyfter
 
 
 def hemta_rum_data(x, y):
@@ -278,27 +362,37 @@ def nytt_forsok(rum):
 
 
 def flytta(r):
+    """Planet lyfter först. Själva förflyttningen sker när avgången är klar."""
+    st.session_state.avgang = {"r": r, "tid": time.time()}
+    st.rerun()
+
+
+def genomfor_flytt(r):
     ss = st.session_state
     dx, dy = RIKTNINGAR[r]
     ss.spelare_x += dx
     ss.spelare_y += dy
     ss.besokta.add((ss.spelare_x, ss.spelare_y))
-    st.rerun()
+    ss.avgang = None
 
 
 @st.cache_data(ttl=300)
 def bild_data_uri(fil):
     """Läser bilden som data, så att planet kan landa ovanpå den."""
-    sokvag = BILDMAPP / fil
-    if not sokvag.exists():
+    sokvag = hitta_bild(fil)
+    if sokvag is None:
         return None
-    mime = {
-        ".png": "image/png",
-        ".jpg": "image/jpeg",
-        ".jpeg": "image/jpeg",
-        ".webp": "image/webp",
-    }.get(sokvag.suffix.lower(), "image/png")
-    return f"data:{mime};base64," + base64.b64encode(sokvag.read_bytes()).decode()
+    data = sokvag.read_bytes()
+    # Bildtypen avgörs av innehållet, så filer med fel eller saknad filändelse fungerar ändå.
+    if data[:3] == b"\xff\xd8\xff":
+        mime = "image/jpeg"
+    elif data[:4] == b"RIFF" and data[8:12] == b"WEBP":
+        mime = "image/webp"
+    elif data[:3] == b"GIF":
+        mime = "image/gif"
+    else:
+        mime = "image/png"
+    return f"data:{mime};base64," + base64.b64encode(data).decode()
 
 
 # ==========================================
@@ -349,6 +443,23 @@ background: repeating-linear-gradient(90deg, var(--gul) 0 18px, transparent 18px
 }
 .plan { position: absolute; left: 50%; bottom: 12px; width: 110px; line-height: 0; transform: translateX(-50%); filter: drop-shadow(0 4px 3px rgba(0,0,0,0.35)); }
 .plan.landar { animation: landa 1.6s cubic-bezier(0.25, 0.7, 0.35, 1) both; }
+.plan.lyfter { animation: lyft 1.4s cubic-bezier(0.55, 0, 0.75, 0.6) both; }
+.plan.lyfter.vanster { animation-name: lyft-vanster; }
+.plan.vanster svg { transform: scaleX(-1); }
+@keyframes lyft {
+0%   { transform: translate(-50%, 0) rotate(0deg); opacity: 1; }
+40%  { transform: translate(-15%, 0) rotate(0deg); }
+55%  { transform: translate(10%, -6px) rotate(-6deg); }
+90%  { opacity: 1; }
+100% { transform: translate(320%, -420%) rotate(-14deg); opacity: 0; }
+}
+@keyframes lyft-vanster {
+0%   { transform: translate(-50%, 0) rotate(0deg); opacity: 1; }
+40%  { transform: translate(-85%, 0) rotate(0deg); }
+55%  { transform: translate(-110%, -6px) rotate(6deg); }
+90%  { opacity: 1; }
+100% { transform: translate(-420%, -420%) rotate(14deg); opacity: 0; }
+}
 @keyframes landa {
 0%   { transform: translate(-330%, -420%) rotate(14deg); opacity: 0; }
 12%  { opacity: 1; }
@@ -356,8 +467,11 @@ background: repeating-linear-gradient(90deg, var(--gul) 0 18px, transparent 18px
 88%  { transform: translate(-51%, 1px) rotate(-1deg); }
 100% { transform: translate(-50%, 0) rotate(0deg); }
 }
-.fraga-text { font-size: 0.95rem; color: var(--gra); margin: 0.8rem 0 0; }
-.landmark { font-size: 1.9rem; font-weight: 700; margin: 0 0 0.6rem; line-height: 1.15; color: var(--ink); }
+.landmark { font-size: 1.9rem; font-weight: 700; margin: 0.9rem 0 0.6rem; line-height: 1.15; color: var(--ink); }
+.fakta { background: #E3F4E8; border-radius: 12px; padding: 0.85rem 1rem; margin: 0.8rem 0; }
+.fakta-rubrik { color: var(--gron); font-weight: 700; font-size: 1.1rem; margin: 0 0 0.3rem; }
+.fakta-text { color: var(--ink); line-height: 1.5; margin: 0; }
+.avgang-text { text-align: center; font-weight: 700; color: var(--ink); margin: 0.8rem 0 0.2rem; }
 
 .st-key-svar button, .st-key-val button {
 background: var(--vit); color: var(--ink); border: 2px solid var(--ink); border-radius: 12px;
@@ -390,7 +504,7 @@ background: var(--gul); color: var(--ink); border-color: var(--ink);
 [data-testid="stSidebar"] { background: var(--vit); }
 
 @media (prefers-reduced-motion: reduce) {
-.plan.landar { animation: none; }
+.plan.landar, .plan.lyfter { animation: none; }
 .st-key-svar button, .st-key-val button { transition: none; }
 }
 </style>
@@ -441,23 +555,48 @@ def rita_tavla():
     )
 
 
-def rita_scen(rum, animera):
+def rita_scen(rum, planklass):
     fil = rum["fraga"]["bild"]
     uri = bild_data_uri(fil)
     if uri:
         bild = f'<img class="scen-bild" src="{uri}" alt="">'
     else:
-        bild = f'<div class="scen-saknas">Bild saknas: bilder/{fil}</div>'
-    klass = "plan landar" if animera else "plan"
+        bild = '<div class="scen-saknas">Bilden saknas</div>'
     visa_html(
         f'<div class="scen">{bild}<div class="bana"></div>'
-        f'<div class="{klass}">{mitt_plan()}</div></div>'
+        f'<div class="{planklass}">{mitt_plan()}</div></div>'
+    )
+
+
+def rita_himmel(planklass):
+    visa_html(
+        f'<div class="scen"><div class="scen-himmel"></div><div class="bana"></div>'
+        f'<div class="{planklass}">{mitt_plan()}</div></div>'
     )
 
 
 def visa_fraga(rum):
-    visa_html('<p class="fraga-text">Var ligger</p>')
-    visa_html(f'<p class="landmark">{rum["fraga"]["landmark"]}?</p>')
+    visa_html('<p class="landmark">Var har vi landat?</p>')
+
+
+def visa_fakta(rum, rubrik):
+    fraga = rum["fraga"]
+    fakta = fraga.get("fakta", "")
+    visa_html(
+        f'<div class="fakta"><p class="fakta-rubrik">{rubrik} Du såg '
+        f'{fraga["landmark"]} i {fraga["ratt_stad"]}.</p>'
+        + (f'<p class="fakta-text">{fakta}</p>' if fakta else "")
+        + "</div>"
+    )
+
+
+@st.fragment(run_every=0.25)
+def avgangs_klocka():
+    """Väntar tills planet har lyft och flyttar sedan spelaren."""
+    avgang = st.session_state.avgang
+    if avgang and time.time() - avgang["tid"] >= AVGANGSTID:
+        genomfor_flytt(avgang["r"])
+        st.rerun()
 
 
 @st.fragment(run_every=0.25)
@@ -565,6 +704,19 @@ nyckel = f"{x},{y}"
 
 rita_tavla()
 
+# --- AVGÅNG: planet lyfter från rutan innan det flyger vidare ---
+if ss.avgang:
+    r = ss.avgang["r"]
+    planklass = "plan lyfter vanster" if r == "A" else "plan lyfter"
+    with st.container(key="fragekort"):
+        if (x, y) == ss.start:
+            rita_himmel(planklass)
+        else:
+            rita_scen(hemta_rum_data(x, y), planklass)
+        visa_html(f'<p class="avgang-text">✈️ Vi lyfter mot {VADERSTRECK[r]} …</p>')
+    avgangs_klocka()
+    st.stop()
+
 # --- MÅL: spelet är slut ---
 if (x, y) == ss.mal:
     if not ss.mal_firat:
@@ -588,11 +740,7 @@ if (x, y) == ss.start:
     forsta_gangen = ss.landning_nyckel is None
     ss.landning_nyckel = nyckel
     with st.container(key="fragekort"):
-        klass = "plan landar" if animera else "plan"
-        visa_html(
-            f'<div class="scen"><div class="scen-himmel"></div><div class="bana"></div>'
-            f'<div class="{klass}">{mitt_plan()}</div></div>'
-        )
+        rita_himmel("plan landar" if animera else "plan")
         if forsta_gangen:
             visa_html('<div class="resultat info">Här startar resan. <span>Välj åt vilket håll du vill flyga.</span></div>')
         else:
@@ -615,7 +763,7 @@ kan_flyga = False
 ratt_stad = rum["fraga"]["ratt_stad"]
 
 with st.container(key="fragekort"):
-    rita_scen(rum, animera)
+    rita_scen(rum, "plan landar" if animera else "plan")
 
     if ss.redan_klarad:
         visa_html('<div class="resultat info">Här har du varit. <span>Flyg vidare!</span></div>')
@@ -625,8 +773,8 @@ with st.container(key="fragekort"):
         fragedel(nyckel)
 
     elif rum["valj_beloning"]:
-        visa_fraga(rum)
-        visa_html('<div class="resultat ratt">Rätt svar! <span>Välj din belöning.</span></div>')
+        visa_fakta(rum, "Rätt!")
+        visa_html('<p class="avgang-text">Välj din belöning</p>')
         with st.container(key="val"):
             col_bonus, col_led = st.columns(2)
             with col_bonus:
@@ -642,11 +790,14 @@ with st.container(key="fragekort"):
                     st.rerun()
 
     else:
-        visa_fraga(rum)
         kan_flyga = True
+        if rum["ratt_svarat"]:
+            visa_fakta(rum, "Rätt!" if rum["beloning"] != "kopt" else "Rätt svar:")
+        else:
+            visa_fraga(rum)
         if rum["beloning"] == "bonus":
             visa_html(
-                f'<div class="resultat ratt">Rätt! <span>Du fick {BONUS_POANG} bonuspoäng.</span></div>'
+                f'<div class="resultat ratt">✈️ <span>Du fick {BONUS_POANG} bonuspoäng.</span></div>'
             )
         elif rum["beloning"] == "ledtrad":
             visa_html(
@@ -655,8 +806,8 @@ with st.container(key="fragekort"):
             )
         elif rum["beloning"] == "kopt":
             visa_html(
-                f'<div class="resultat info">Rätt svar är {ratt_stad}. '
-                f'<span>💡 Du är cirka {rum["cirka_avstand"]} rutor från utgången.</span></div>'
+                f'<div class="resultat info">💡 Ledtråd: '
+                f'<span>du är cirka {rum["cirka_avstand"]} rutor från utgången.</span></div>'
             )
         else:
             fel_text = "Tiden tog slut." if rum["tiden_ute"] else "Fel svar."
