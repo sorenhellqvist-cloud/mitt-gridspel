@@ -19,8 +19,9 @@ MIN_AVSTAND = 8       # minsta antal steg mellan start och mål (0 = ingen grän
 TIDSGRANS = 8.0       # sekunder att svara på
 LANDNINGSTID = 1.8    # sekunder innan frågan dyker upp (planet landar)
 AVGANGSTID = 1.5      # sekunder som planet lyfter innan det flyger till nästa ruta
-BONUS_POANG = 100     # poäng för att välja flygbonus
-KOP_PRIS = 300        # vad det kostar att köpa rätt svar
+POANG_PER_FORSOK = [100, 50, 25]  # poäng för rätt svar på första, andra och tredje försöket
+MAX_FORSOK = len(POANG_PER_FORSOK)  # så många fel svar innan rutan är förbrukad
+MAX_FORBRUKADE = 5    # så många förbrukade rutor innan spelet avbryts
 BILDMAPP = Path(__file__).parent / "bilder"
 EXTRA_DORR_ANDEL = 0.25  # andel extra dörrar utöver labyrintens grundgångar
 
@@ -111,6 +112,16 @@ FRAGE_BANK = [
      "falska_stader": ["Toledo", "Salamanca", "Madrid", "Sevilla", "Granada", "Ávila"],
      "fakta": "En medeltida borg högt uppe på en klippa. Den sägs ha inspirerat Walt Disneys sagoslott."},
 
+    {"landmark": "Ha'penny Bridge", "ratt_stad": "Dublin", "bild": "dublin_half-penny-bridge.png",
+     "falska_stader": ["Belfast", "Cork", "Galway", "Edinburgh", "Liverpool", "Glasgow"],
+     "fakta": "En gångbro i gjutjärn över floden Liffey från 1816. Namnet kommer från avgiften på en halv penny som man förr fick betala för att gå över."},
+    {"landmark": "Mole Antonelliana", "ratt_stad": "Turin", "bild": "turin__mole_antonelliana.png",
+     "falska_stader": ["Milano", "Genua", "Bologna", "Florens", "Lyon", "Venedig"],
+     "fakta": "Började byggas 1863 som en synagoga men blev i stället stadens symbol. I dag rymmer den Italiens nationella filmmuseum."},
+    {"landmark": "Suomen Joutsen", "ratt_stad": "Åbo", "bild": "åbo_suomen-joutsen.png",
+     "falska_stader": ["Helsingfors", "Tammerfors", "Mariehamn", "Stockholm", "Tallinn", "Vasa"],
+     "fakta": "Ett fullriggat segelfartyg byggt 1902. Det var länge den finska flottans skolfartyg och ligger nu som museifartyg vid Aura å."},
+
     # --- Nordamerika ---
     {"landmark": "Frihetsgudinnan", "ratt_stad": "New York", "bild": "new-york_frihetsgudinnan.png",
      "falska_stader": ["Boston", "Philadelphia", "Washington", "Chicago", "Paris", "Toronto"],
@@ -128,7 +139,20 @@ FRAGE_BANK = [
      "falska_stader": ["Madrid", "Havanna", "Buenos Aires", "Bogotá", "Lima", "Guadalajara"],
      "fakta": "Ett konsthus och en teater med en kupol täckt av gult och orange kakel. Bygget började 1904 men blev inte klart förrän 1934."},
 
+    {"landmark": "Willis Tower", "ratt_stad": "Chicago", "bild": "chicago_sears-tower.jpg",
+     "falska_stader": ["New York", "Toronto", "Detroit", "Boston", "Philadelphia", "Milwaukee"],
+     "fakta": "Skyskrapan hette Sears Tower när den blev klar 1973 och var världens högsta byggnad i över 20 år. Högst upp kan man kliva ut i glasburar och se rakt ned 412 meter."},
+
     # --- Asien ---
+    {"landmark": "Hagia Sofia", "ratt_stad": "Istanbul", "bild": "istanbul_hagia-sofia.png",
+     "falska_stader": ["Aten", "Ankara", "Kairo", "Sofia", "Thessaloniki", "Izmir"],
+     "fakta": "Byggdes som kyrka år 537 och blev moské 1453. Senare var den museum i många år, och sedan 2020 är den moské igen."},
+    {"landmark": "Humayuns grav", "ratt_stad": "Delhi", "bild": "deli_humajuns-grav.png",
+     "falska_stader": ["Agra", "Jaipur", "Lahore", "Mumbai", "Karachi", "Varanasi"],
+     "fakta": "Ett gravmonument över mogulkejsaren Humayun, klart på 1570-talet. Det var en förebild för det betydligt mer kända Taj Mahal."},
+    {"landmark": "Taipei 101", "ratt_stad": "Taipei", "bild": "taipei_taipei-101.png",
+     "falska_stader": ["Hongkong", "Shanghai", "Tokyo", "Seoul", "Singapore", "Kaohsiung"],
+     "fakta": "En 508 meter hög skyskrapa som var världens högsta byggnad 2004–2010. Högt upp hänger en jättelik stålkula som dämpar svajningarna vid tyfoner och jordbävningar."},
     {"landmark": "Burj al Arab", "ratt_stad": "Dubai", "bild": "dubai_burj-al-arab.png",
      "falska_stader": ["Abu Dhabi", "Doha", "Riyadh", "Muscat", "Bahrain", "Kuwait City"],
      "fakta": "Ett lyxhotell från 1999 som ligger på en konstgjord ö. Formen ska likna ett segel."},
@@ -202,8 +226,12 @@ REGLER = [
     "Startrutan ligger vid en kant av spelplanen och målet vid en annan kant.",
     f"I varje ny ruta ser du en bild som ska ge dig en ledtråd om var du har landat, "
     f"och du har {int(TIDSGRANS)} sekunder på dig att svara i vilken stad du landat.",
-    f"Rätt svar ger dig en ledtråd eller {BONUS_POANG} bonuspoäng. "
-    f"Har du {KOP_PRIS} bonuspoäng kan du köpa rätt svar när du svarat fel.",
+    f"Svarar du rätt första gången får du {POANG_PER_FORSOK[0]} poäng. Svarar du fel kan du "
+    f"komma tillbaka och försöka igen: rätt svar på andra försöket ger {POANG_PER_FORSOK[1]} "
+    f"poäng och på tredje försöket {POANG_PER_FORSOK[2]} poäng.",
+    f"Svarar du fel {MAX_FORSOK} gånger är rutan förbrukad, och då kan du inte landa där igen. "
+    f"Får du {MAX_FORBRUKADE} förbrukade rutor är spelet slut.",
+    "Varje rätt svar ger dig också en ledtråd om hur långt det är kvar till målet.",
     "Du kan landa i en ruta som redan är avklarad, men då är det bara att flyga vidare.",
 ]
 
@@ -319,6 +347,8 @@ def nollstall_spel():
     ss.mal_firat = False
     ss.landning_nyckel = None  # rummet där planet senast landade
     ss.redan_klarad = False    # om rummet var klarat redan när planet landade
+    ss.forbrukade = set()      # rutor med för många fel svar, går inte att landa i
+    ss.antal_forbrukade = 0    # räknas för sig, eftersom en ruta kan behöva öppnas igen
     ss.avgang = None           # vald riktning och starttid medan planet lyfter
 
 
@@ -338,27 +368,114 @@ def hemta_rum_data(x, y):
             "fraga": fraga,
             "svars_val": val,
             "cirka_avstand": cirka_avstand,
-            "klarad": False,        # rätt svar eller köpt svar
+            "klarad": False,        # rätt svar har getts
+            "fel": 0,               # antal fel svar hittills
+            "fick_poang": 0,        # poäng för det rätta svaret
             # Det aktuella försöket:
             "svarat": False,
             "ratt_svarat": False,
             "tiden_ute": False,
-            "valj_beloning": False,
-            "beloning": None,       # 'bonus', 'ledtrad' eller 'kopt'
             "start_tid": None,
         }
     return st.session_state.rum_data[nyckel]
 
 
 def nytt_forsok(rum):
-    """Nollställer frågan när spelaren landar i ett rum som inte är klarat."""
+    """Nollställer frågan när spelaren landar i en ruta som inte är klarad."""
     rum["svarat"] = False
     rum["ratt_svarat"] = False
     rum["tiden_ute"] = False
-    rum["valj_beloning"] = False
-    rum["beloning"] = None
     rum["start_tid"] = time.time() + LANDNINGSTID
     random.shuffle(rum["svars_val"])
+
+
+def granne(x, y, r):
+    dx, dy = RIKTNINGAR[r]
+    return x + dx, y + dy
+
+
+def sakra_vag_till_mal(fran):
+    """Ser till att målet fortfarande går att nå när en ruta har blivit förbrukad.
+
+    Om förbrukade rutor stänger vägen öppnas nya dörrar, så att spelet
+    aldrig kan bli omöjligt att vinna.
+    """
+    ss = st.session_state
+    alla = [(x, y) for x in range(1, STORLEK + 1) for y in range(1, STORLEK + 1)]
+
+    def bredden_forst(kallor, far_ga, mal_mangd):
+        """Kortaste väg från någon av källorna till mål_mängden. Returnerar rutorna i ordning."""
+        forega = {k: None for k in kallor}
+        ko = list(kallor)
+        while ko:
+            pos = ko.pop(0)
+            if pos in mal_mangd:
+                vag = []
+                while pos is not None:
+                    vag.append(pos)
+                    pos = forega[pos]
+                return vag[::-1]
+            for r in RIKTNINGAR:
+                nasta = granne(*pos, r)
+                if i_rutnat(*nasta) and nasta not in forega and far_ga(pos, r, nasta):
+                    forega[nasta] = pos
+                    ko.append(nasta)
+        return None
+
+    for _ in range(len(alla)):
+        # Rutor som når målet genom dörrar utan att passera förbrukade rutor.
+        nar_malet = {ss.mal}
+        ko = [ss.mal]
+        while ko:
+            pos = ko.pop()
+            for r in ss.labyrint[pos]:
+                nasta = granne(*pos, r)
+                if nasta not in nar_malet and nasta not in ss.forbrukade:
+                    nar_malet.add(nasta)
+                    ko.append(nasta)
+
+        # Spelaren står i den förbrukade rutan och ska kunna flyga ut genom vilken
+        # öppen dörr som helst och ändå nå målet därifrån.
+        utgangar = [granne(*fran, r) for r in ss.labyrint[fran]]
+        avskurna = [p for p in utgangar if p not in ss.forbrukade and p not in nar_malet]
+        if not any(p in nar_malet for p in utgangar):
+            avskurna.insert(0, fran)
+        if not avskurna:
+            return
+
+        kalla = avskurna[0]
+        # Helst en väg runt de förbrukade rutorna. Finns ingen sådan öppnas
+        # förbrukade rutor igen längs vägen. Vägen går aldrig genom rutan
+        # spelaren står i, eftersom den nu är förbrukad.
+        vag = bredden_forst(
+            [kalla], lambda a, r, b: b not in ss.forbrukade, nar_malet
+        ) or bredden_forst([kalla], lambda a, r, b: b != fran, nar_malet)
+        for a, b in zip(vag, vag[1:]):
+            ss.forbrukade.discard(b)
+            for r in RIKTNINGAR:
+                if granne(*a, r) == b and r not in ss.labyrint[a]:
+                    oppna_dorr(ss.labyrint, *a, r)
+
+
+def ratt_svar(rum):
+    ss = st.session_state
+    rum["svarat"] = True
+    rum["ratt_svarat"] = True
+    rum["klarad"] = True
+    rum["fick_poang"] = POANG_PER_FORSOK[rum["fel"]]
+    ss.poang += rum["fick_poang"]
+
+
+def fel_svar(rum, nyckel, tiden_ute=False):
+    ss = st.session_state
+    rum["svarat"] = True
+    rum["tiden_ute"] = tiden_ute
+    rum["fel"] += 1
+    if rum["fel"] >= MAX_FORSOK:
+        pos = tuple(int(t) for t in nyckel.split(","))
+        ss.forbrukade.add(pos)
+        ss.antal_forbrukade += 1
+        sakra_vag_till_mal(pos)
 
 
 def flytta(r):
@@ -471,6 +588,7 @@ background: repeating-linear-gradient(90deg, var(--gul) 0 18px, transparent 18px
 .fakta { background: #E3F4E8; border-radius: 12px; padding: 0.85rem 1rem; margin: 0.8rem 0; }
 .fakta-rubrik { color: var(--gron); font-weight: 700; font-size: 1.1rem; margin: 0 0 0.3rem; }
 .fakta-text { color: var(--ink); line-height: 1.5; margin: 0; }
+.forsok { color: var(--gra); font-size: 0.95rem; margin: 0 0 0.5rem; }
 .avgang-text { text-align: center; font-weight: 700; color: var(--ink); margin: 0.8rem 0 0.2rem; }
 
 .st-key-svar button, .st-key-val button {
@@ -547,7 +665,7 @@ def rita_tavla():
         <div class="tavla-rad">
         <div><div class="tavla-liten">Du är i ruta</div>
         <div class="tavla-stor">{rutnamn(ss.spelare_x, ss.spelare_y)}</div></div>
-        <div class="tavla-hoger"><div class="tavla-liten">Bonuspoäng</div>
+        <div class="tavla-hoger"><div class="tavla-liten">Poäng</div>
         <div class="tavla-stor">{ss.poang}</div></div>
         </div>
         </div>
@@ -613,26 +731,34 @@ def fragedel(nyckel):
 
     kvar = TIDSGRANS - (nu - rum["start_tid"])
     if kvar <= 0:
-        rum["svarat"] = True
-        rum["tiden_ute"] = True
+        fel_svar(rum, nyckel, tiden_ute=True)
         st.rerun()
 
     visa_fraga(rum)
+    varde = POANG_PER_FORSOK[rum["fel"]]
+    if rum["fel"] == 0:
+        visa_html(f'<p class="forsok">Rätt svar ger {varde} poäng.</p>')
+    else:
+        visa_html(
+            f'<p class="forsok">Försök {rum["fel"] + 1} av {MAX_FORSOK}. '
+            f'Rätt svar ger {varde} poäng.</p>'
+        )
     st.progress(kvar / TIDSGRANS, text=f"{math.ceil(kvar)} sekunder kvar")
 
     with st.container(key="svar"):
         for alt in rum["svars_val"]:
             if st.button(alt, key=f"btn_{nyckel}_{alt}", use_container_width=True):
-                rum["svarat"] = True
                 if alt == rum["fraga"]["ratt_stad"]:
-                    rum["ratt_svarat"] = True
-                    rum["klarad"] = True
-                    rum["valj_beloning"] = True
+                    ratt_svar(rum)
+                else:
+                    fel_svar(rum, nyckel)
                 st.rerun()
 
 
 def rita_styrkors(x, y):
-    dorrar = st.session_state.labyrint[(x, y)]
+    ss = st.session_state
+    dorrar = ss.labyrint[(x, y)]
+    oppna = {r for r in dorrar if granne(x, y, r) not in ss.forbrukade}
     visa_html('<div class="rubrik">Flyg vidare</div>')
     with st.container(key="dpad"):
         rader = [[None, "W", None], ["A", "mitt", "D"], [None, "S", None]]
@@ -646,10 +772,12 @@ def rita_styrkors(x, y):
                         if st.button(
                             ETIKETTER[r],
                             key=f"dorr_{r}",
-                            disabled=r not in dorrar,
+                            disabled=r not in oppna,
                             use_container_width=True,
                         ):
                             flytta(r)
+    if any(granne(x, y, r) in ss.forbrukade for r in dorrar):
+        visa_html('<p class="forsok">⛔ Rutor du har svarat fel på tre gånger går inte att flyga till.</p>')
 
 
 def startskarm():
@@ -679,7 +807,7 @@ def startskarm():
 ss = st.session_state
 visa_html(CSS)
 
-if "spel_startat" not in ss or "mal" not in ss:
+if "spel_startat" not in ss or "antal_forbrukade" not in ss:
     ss.plan_farg = "Blå"
     ss.spel_startat = False
     nollstall_spel()
@@ -704,6 +832,18 @@ nyckel = f"{x},{y}"
 
 rita_tavla()
 
+# --- FÖR MÅNGA FEL: spelet avbryts ---
+if ss.antal_forbrukade >= MAX_FORBRUKADE:
+    visa_html(
+        '<div class="resultat fel">Spelet avslutat på grund av för många felaktiga svar.'
+        f' <span>Du fick {ss.poang} poäng.</span></div>'
+    )
+    if st.button("Spela igen", type="primary", use_container_width=True):
+        nollstall_spel()
+        ss.spel_startat = False
+        st.rerun()
+    st.stop()
+
 # --- AVGÅNG: planet lyfter från rutan innan det flyger vidare ---
 if ss.avgang:
     r = ss.avgang["r"]
@@ -726,7 +866,7 @@ if (x, y) == ss.mal:
     visa_html(
         f'<div class="resultat ratt">🏆 Du hittade ut! '
         f'<span>Du flög från {rutnamn(*ss.start)} till {rutnamn(*ss.mal)} genom '
-        f'{len(ss.besokta)} rutor och har {ss.poang} bonuspoäng.</span></div>'
+        f'{len(ss.besokta)} rutor och fick {ss.poang} poäng.</span></div>'
     )
     if st.button("Spela igen", type="primary", use_container_width=True):
         nollstall_spel()
@@ -755,8 +895,10 @@ animera = False
 if ss.landning_nyckel != nyckel:
     ss.landning_nyckel = nyckel
     animera = True
-    ss.redan_klarad = rum["klarad"]
-    if not rum["klarad"]:
+    # En förbrukad ruta går inte att flyga till, men skulle man ändå hamna där
+    # behandlas den som avklarad.
+    ss.redan_klarad = rum["klarad"] or rum["fel"] >= MAX_FORSOK
+    if not ss.redan_klarad:
         nytt_forsok(rum)
 
 kan_flyga = False
@@ -772,59 +914,31 @@ with st.container(key="fragekort"):
     elif not rum["svarat"]:
         fragedel(nyckel)
 
-    elif rum["valj_beloning"]:
-        visa_fakta(rum, "Rätt!")
-        visa_html('<p class="avgang-text">Välj din belöning</p>')
-        with st.container(key="val"):
-            col_bonus, col_led = st.columns(2)
-            with col_bonus:
-                if st.button(f"✈️ Flygbonus +{BONUS_POANG}", use_container_width=True):
-                    ss.poang += BONUS_POANG
-                    rum["valj_beloning"] = False
-                    rum["beloning"] = "bonus"
-                    st.rerun()
-            with col_led:
-                if st.button("💡 Ledtråd", use_container_width=True):
-                    rum["valj_beloning"] = False
-                    rum["beloning"] = "ledtrad"
-                    st.rerun()
-
     else:
         kan_flyga = True
         if rum["ratt_svarat"]:
-            visa_fakta(rum, "Rätt!" if rum["beloning"] != "kopt" else "Rätt svar:")
-        else:
-            visa_fraga(rum)
-        if rum["beloning"] == "bonus":
+            visa_fakta(rum, "Rätt!")
             visa_html(
-                f'<div class="resultat ratt">✈️ <span>Du fick {BONUS_POANG} bonuspoäng.</span></div>'
-            )
-        elif rum["beloning"] == "ledtrad":
-            visa_html(
+                f'<div class="resultat ratt">+{rum["fick_poang"]} poäng</div>'
                 f'<div class="resultat info">💡 Ledtråd: '
-                f'<span>du är cirka {rum["cirka_avstand"]} rutor från utgången.</span></div>'
+                f'<span>du är cirka {rum["cirka_avstand"]} rutor från målet.</span></div>'
             )
-        elif rum["beloning"] == "kopt":
+        elif rum["fel"] >= MAX_FORSOK:
+            fel_text = "Tiden tog slut igen." if rum["tiden_ute"] else "Fel svar igen."
             visa_html(
-                f'<div class="resultat info">💡 Ledtråd: '
-                f'<span>du är cirka {rum["cirka_avstand"]} rutor från utgången.</span></div>'
+                f'<div class="resultat fel">{fel_text} <span>Rutan är nu förbrukad, '
+                f'och du kan inte landa här fler gånger. Du har {ss.antal_forbrukade} av '
+                f'{MAX_FORBRUKADE} förbrukade rutor.</span></div>'
             )
+            visa_fakta(rum, "Rätt svar:")
         else:
             fel_text = "Tiden tog slut." if rum["tiden_ute"] else "Fel svar."
-            visa_html(f'<div class="resultat fel">{fel_text}</div>')
-            if ss.poang >= KOP_PRIS:
-                if st.button(
-                    f"Köp rätt svar för {KOP_PRIS} poäng",
-                    type="primary",
-                    use_container_width=True,
-                ):
-                    ss.poang -= KOP_PRIS
-                    rum["ratt_svarat"] = True
-                    rum["klarad"] = True
-                    rum["beloning"] = "kopt"
-                    st.rerun()
-            else:
-                st.caption(f"Med {KOP_PRIS} bonuspoäng kan du köpa rätt svar nästa gång.")
+            kvar = MAX_FORSOK - rum["fel"]
+            visa_html(
+                f'<div class="resultat fel">{fel_text} <span>Du kan komma tillbaka och försöka igen. '
+                f'Då ger rätt svar {POANG_PER_FORSOK[rum["fel"]]} poäng. '
+                f'Försök kvar: {kvar}.</span></div>'
+            )
 
 # --- FLYG VIDARE: visas först när frågan är avklarad ---
 if kan_flyga:
