@@ -22,6 +22,13 @@ AVGANGSTID = 1.5      # sekunder som planet lyfter innan det flyger till nästa 
 POANG_PER_FORSOK = [100, 50, 25]  # poäng för rätt svar på första, andra och tredje försöket
 MAX_FORSOK = len(POANG_PER_FORSOK)  # så många fel svar innan rutan är förbrukad
 MAX_FORBRUKADE = 5    # så många förbrukade rutor innan spelet avbryts
+MAX_BRANSLE = 3       # full tank: 3 = full, 2 = halvfull, 1 = nästan tom, 0 = tom
+BRANSLE_LAGEN = {
+    3: ("Full", "#34C759"),
+    2: ("Halvfull", "#FFC93C"),
+    1: ("Nästan tom", "#FF5A5F"),
+    0: ("Tom", "#7A879B"),
+}
 BILDMAPP = Path(__file__).parent / "bilder"
 EXTRA_DORR_ANDEL = 0.25  # andel extra dörrar utöver labyrintens grundgångar
 
@@ -122,6 +129,22 @@ FRAGE_BANK = [
      "falska_stader": ["Helsingfors", "Tammerfors", "Mariehamn", "Stockholm", "Tallinn", "Vasa"],
      "fakta": "Ett fullriggat segelfartyg byggt 1902. Det var länge den finska flottans skolfartyg och ligger nu som museifartyg vid Aura å."},
 
+    {"landmark": "Karlatornet", "ratt_stad": "Göteborg", "bild": "göteborg_karlatornet.png",
+     "falska_stader": ["Stockholm", "Malmö", "Oslo", "Köpenhamn", "Helsingfors", "Uppsala"],
+     "fakta": "Nordens högsta byggnad, cirka 246 meter hög. Skyskrapan ligger på Hisingen vid Göta älv och har över 70 våningar."},
+    {"landmark": "Pradomuseet", "ratt_stad": "Madrid", "bild": "madrid_museo-del-prado.png",
+     "falska_stader": ["Barcelona", "Sevilla", "Lissabon", "Rom", "Paris", "Valencia"],
+     "fakta": "Ett av världens främsta konstmuseer, öppnat 1819. Här finns mästerverk av spanska konstnärer som Velázquez, Goya och El Greco."},
+    {"landmark": "Dansande huset", "ratt_stad": "Prag", "bild": "prague_dancing-house.jpg",
+     "falska_stader": ["Wien", "Budapest", "Bratislava", "Berlin", "Kraków", "Bilbao"],
+     "fakta": "Ett kontorshus från 1996 som ritades av Vlado Milunić och Frank Gehry. Det kallas också Fred och Ginger, efter dansparet Fred Astaire och Ginger Rogers."},
+    {"landmark": "Haus Wittgenstein", "ratt_stad": "Wien", "bild": "wien_haus_wittgenstein.png",
+     "falska_stader": ["Berlin", "München", "Prag", "Budapest", "Zürich", "Graz"],
+     "fakta": "Ett strikt och enkelt hus som filosofen Ludwig Wittgenstein ritade åt sin syster i slutet av 1920-talet. Han var noga med varenda detalj, ända ned till dörrhandtagen."},
+    {"landmark": "Saint-Exupérys TGV-station", "ratt_stad": "Lyon", "bild": "lyon_saint-exupéry-tvg-station.jpg",
+     "falska_stader": ["Paris", "Marseille", "Bordeaux", "Lille", "Genève", "Valencia"],
+     "fakta": "En järnvägsstation vid flygplatsen, ritad av arkitekten Santiago Calatrava och öppnad 1994. Byggnaden ser ut som en fågel med utbredda vingar. Flygplatsen är uppkallad efter författaren till Lille prinsen, som föddes i staden."},
+
     # --- Nordamerika ---
     {"landmark": "Frihetsgudinnan", "ratt_stad": "New York", "bild": "new-york_frihetsgudinnan.png",
      "falska_stader": ["Boston", "Philadelphia", "Washington", "Chicago", "Paris", "Toronto"],
@@ -142,6 +165,10 @@ FRAGE_BANK = [
     {"landmark": "Willis Tower", "ratt_stad": "Chicago", "bild": "chicago_sears-tower.jpg",
      "falska_stader": ["New York", "Toronto", "Detroit", "Boston", "Philadelphia", "Milwaukee"],
      "fakta": "Skyskrapan hette Sears Tower när den blev klar 1973 och var världens högsta byggnad i över 20 år. Högst upp kan man kliva ut i glasburar och se rakt ned 412 meter."},
+
+    {"landmark": "Bensinstationen Union 76", "ratt_stad": "Beverly Hills", "bild": "beverly-hills_union-76-gas-station.png",
+     "falska_stader": ["Los Angeles", "Santa Monica", "Las Vegas", "San Diego", "Palm Springs", "Phoenix"],
+     "fakta": "En bensinstation från 1965 med ett svävande, böjt tak. Den är ett känt exempel på 1960-talets futuristiska arkitektur, som var inspirerad av rymdåldern."},
 
     # --- Asien ---
     {"landmark": "Hagia Sofia", "ratt_stad": "Istanbul", "bild": "istanbul_hagia-sofia.png",
@@ -231,7 +258,9 @@ REGLER = [
     f"poäng och på tredje försöket {POANG_PER_FORSOK[2]} poäng.",
     f"Svarar du fel {MAX_FORSOK} gånger är rutan förbrukad, och då kan du inte landa där igen. "
     f"Får du {MAX_FORBRUKADE} förbrukade rutor är spelet slut.",
-    "Varje rätt svar ger dig också en ledtråd om hur långt det är kvar till målet.",
+    "En pil visar ungefär åt vilket håll målet ligger: norr, öster, söder eller väster.",
+    "Varje förflyttning kostar bränsle. Tanken är full när du startar, och för varje rätt "
+    "svar fylls den på ett steg. Tar bränslet slut är spelet över.",
     "Du kan landa i en ruta som redan är avklarad, men då är det bara att flyga vidare.",
 ]
 
@@ -349,6 +378,7 @@ def nollstall_spel():
     ss.redan_klarad = False    # om rummet var klarat redan när planet landade
     ss.forbrukade = set()      # rutor med för många fel svar, går inte att landa i
     ss.antal_forbrukade = 0    # räknas för sig, eftersom en ruta kan behöva öppnas igen
+    ss.bransle = MAX_BRANSLE   # tanken är full vid start
     ss.avgang = None           # vald riktning och starttid medan planet lyfter
 
 
@@ -360,14 +390,10 @@ def hemta_rum_data(x, y):
         val = falska + [fraga["ratt_stad"]]
         random.shuffle(val)
 
-        mal_x, mal_y = st.session_state.mal
-        exakt_avstand = abs(mal_x - x) + abs(mal_y - y)
-        cirka_avstand = max(1, exakt_avstand + random.choice([-1, 0, 1]))
 
         st.session_state.rum_data[nyckel] = {
             "fraga": fraga,
             "svars_val": val,
-            "cirka_avstand": cirka_avstand,
             "klarad": False,        # rätt svar har getts
             "fel": 0,               # antal fel svar hittills
             "fick_poang": 0,        # poäng för det rätta svaret
@@ -464,6 +490,8 @@ def ratt_svar(rum):
     rum["klarad"] = True
     rum["fick_poang"] = POANG_PER_FORSOK[rum["fel"]]
     ss.poang += rum["fick_poang"]
+    rum["tankade"] = ss.bransle < MAX_BRANSLE
+    ss.bransle = min(MAX_BRANSLE, ss.bransle + 1)
 
 
 def fel_svar(rum, nyckel, tiden_ute=False):
@@ -490,6 +518,7 @@ def genomfor_flytt(r):
     ss.spelare_x += dx
     ss.spelare_y += dy
     ss.besokta.add((ss.spelare_x, ss.spelare_y))
+    ss.bransle = max(0, ss.bransle - 1)
     ss.avgang = None
 
 
@@ -542,6 +571,13 @@ font-family: 'Atkinson Hyperlegible', system-ui, -apple-system, sans-serif;
 .tavla-liten { font-size: 0.85rem; opacity: 0.75; }
 .tavla-stor { font-size: 2.4rem; font-weight: 700; color: var(--gul); line-height: 1.05; }
 .tavla-hoger { text-align: right; }
+.tavla .tavla-rad { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 1.1rem; align-items: start; }
+.tavla-del { min-width: 0; }
+.tavla-del .tavla-liten { line-height: 1.25; min-height: 2.15rem; }
+.pil { font-size: 2.6rem; }
+.tank { display: flex; gap: 4px; margin: 0.45rem 0 0.35rem; }
+.tank-steg { display: block; width: 26px; height: 22px; border-radius: 4px; }
+.tank-text { font-size: 0.85rem; font-weight: 700; color: var(--vit); }
 
 .hangar { display: flex; justify-content: center; padding: 1.5rem 0 1rem; }
 .hangar svg { filter: drop-shadow(0 8px 6px rgba(20,33,61,0.25)); }
@@ -656,16 +692,42 @@ def mitt_plan(bredd=110):
     return plan_svg(FLYGPLAN[st.session_state.plan_farg], bredd)
 
 
+def riktning_till_mal():
+    """Ungefärlig riktning till målet: det väderstreck där avståndet är störst."""
+    ss = st.session_state
+    dx = ss.mal[0] - ss.spelare_x
+    dy = ss.mal[1] - ss.spelare_y
+    if abs(dx) >= abs(dy):
+        return ("→", "Öster") if dx > 0 else ("←", "Väster")
+    return ("↓", "Söder") if dy > 0 else ("↑", "Norr")
+
+
+def bransle_matare(niva):
+    namn, farg = BRANSLE_LAGEN[niva]
+    staplar = "".join(
+        f'<span class="tank-steg" style="background:{farg if i < niva else "rgba(255,255,255,0.18)"}"></span>'
+        for i in range(MAX_BRANSLE)
+    )
+    return (
+        f'<div class="tank" role="img" aria-label="Bränsle: {namn}">{staplar}</div>'
+        f'<div class="tank-text" style="color:{farg if niva else "#C9D3E1"}">{namn}</div>'
+    )
+
+
 def rita_tavla():
     ss = st.session_state
+    pil, vaderstreck = riktning_till_mal()
     visa_html(
         f"""
         <div class="tavla">
         <div class="tavla-titel">✈️ Stadsäventyret</div>
         <div class="tavla-rad">
-        <div><div class="tavla-liten">Du är i ruta</div>
-        <div class="tavla-stor">{rutnamn(ss.spelare_x, ss.spelare_y)}</div></div>
-        <div class="tavla-hoger"><div class="tavla-liten">Poäng</div>
+        <div class="tavla-del"><div class="tavla-liten">Ungefärlig riktning till mål</div>
+        <div class="tavla-stor pil" aria-label="{vaderstreck}">{pil}</div>
+        <div class="tank-text">{vaderstreck}</div></div>
+        <div class="tavla-del"><div class="tavla-liten">⛽ Bränsle</div>
+        {bransle_matare(ss.bransle)}</div>
+        <div class="tavla-del tavla-hoger"><div class="tavla-liten">Poäng</div>
         <div class="tavla-stor">{ss.poang}</div></div>
         </div>
         </div>
@@ -807,7 +869,7 @@ def startskarm():
 ss = st.session_state
 visa_html(CSS)
 
-if "spel_startat" not in ss or "antal_forbrukade" not in ss:
+if "spel_startat" not in ss or "bransle" not in ss:
     ss.plan_farg = "Blå"
     ss.spel_startat = False
     nollstall_spel()
@@ -865,8 +927,19 @@ if (x, y) == ss.mal:
     visa_html(f'<div class="hangar">{mitt_plan(240)}</div>')
     visa_html(
         f'<div class="resultat ratt">🏆 Du hittade ut! '
-        f'<span>Du flög från {rutnamn(*ss.start)} till {rutnamn(*ss.mal)} genom '
-        f'{len(ss.besokta)} rutor och fick {ss.poang} poäng.</span></div>'
+        f'<span>Du flög genom {len(ss.besokta)} rutor och fick {ss.poang} poäng.</span></div>'
+    )
+    if st.button("Spela igen", type="primary", use_container_width=True):
+        nollstall_spel()
+        ss.spel_startat = False
+        st.rerun()
+    st.stop()
+
+# --- BRÄNSLET SLUT: spelet avbryts ---
+if ss.bransle <= 0:
+    visa_html(
+        '<div class="resultat fel">⛽ Bränslet tog slut. Spelet är avslutat.'
+        f' <span>Du fick {ss.poang} poäng.</span></div>'
     )
     if st.button("Spela igen", type="primary", use_container_width=True):
         nollstall_spel()
@@ -919,9 +992,9 @@ with st.container(key="fragekort"):
         if rum["ratt_svarat"]:
             visa_fakta(rum, "Rätt!")
             visa_html(
-                f'<div class="resultat ratt">+{rum["fick_poang"]} poäng</div>'
-                f'<div class="resultat info">💡 Ledtråd: '
-                f'<span>du är cirka {rum["cirka_avstand"]} rutor från målet.</span></div>'
+                f'<div class="resultat ratt">+{rum["fick_poang"]} poäng <span>'
+                + ("⛽ Tanken fylldes på ett steg." if rum.get("tankade") else "⛽ Tanken är full.")
+                + "</span></div>"
             )
         elif rum["fel"] >= MAX_FORSOK:
             fel_text = "Tiden tog slut igen." if rum["tiden_ute"] else "Fel svar igen."
