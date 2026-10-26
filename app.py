@@ -22,6 +22,7 @@ AVGANGSTID = 1.5      # sekunder som planet lyfter innan det flyger till nästa 
 POANG_PER_FORSOK = [100, 50, 25]  # poäng för rätt svar på första, andra och tredje försöket
 MAX_FORSOK = len(POANG_PER_FORSOK)  # så många fel svar innan rutan är förbrukad
 MAX_FORBRUKADE = 5    # så många förbrukade rutor innan spelet avbryts
+DORR_PRIS = 100       # vad det kostar i poäng att öppna en stängd dörr
 MAX_BRANSLE = 4       # full tank: 4 = full, 3 = nästan full, 2 = halvfull, 1 = nästan tom, 0 = tom
 PAFYLLNING = 2        # så många staplar ett rätt svar fyller på
 BRANSLE_LAGEN = {
@@ -270,6 +271,7 @@ FLYGPLAN = {
 RIKTNINGAR = {"W": (0, -1), "S": (0, 1), "A": (-1, 0), "D": (1, 0)}
 MOTSATS = {"W": "S", "S": "W", "A": "D", "D": "A"}
 ETIKETTER = {"W": "↑ Norr", "A": "← Väster", "D": "Öster →", "S": "↓ Söder"}
+KNAPPORDNING = ["W", "A", "D", "S"]
 VADERSTRECK = {"W": "norr", "A": "väster", "D": "öster", "S": "söder"}
 
 REGLER = [
@@ -286,6 +288,8 @@ REGLER = [
     "En pil visar ungefär åt vilket håll målet ligger: norr, öster, söder eller väster.",
     f"Varje förflyttning kostar bränsle. Tanken är full när du startar, och för varje rätt "
     f"svar fylls den på {PAFYLLNING} steg. Tar bränslet slut är spelet över.",
+    "Alla rutor har inte öppna dörrar åt alla håll. En stängd dörr visas med ett lås, "
+    f"och du kan öppna den för {DORR_PRIS} poäng.",
     "Du kan landa i en ruta som redan är avklarad, men då är det bara att flyga vidare.",
 ]
 
@@ -652,6 +656,7 @@ background: repeating-linear-gradient(90deg, var(--gul) 0 18px, transparent 18px
 .fakta-rubrik { color: var(--gron); font-weight: 700; font-size: 1.1rem; margin: 0 0 0.3rem; }
 .fakta-text { color: var(--ink); line-height: 1.5; margin: 0; }
 .forsok { color: var(--gra); font-size: 0.95rem; margin: 0 0 0.5rem; }
+.dpad-info { color: var(--gra); font-size: 0.95rem; margin: 0.6rem auto 0.3rem; text-align: center; max-width: 380px; }
 .avgang-text { text-align: center; font-weight: 700; color: var(--ink); margin: 0.8rem 0 0.2rem; }
 
 .st-key-svar button, .st-key-val button {
@@ -677,7 +682,13 @@ background: var(--gul); color: var(--ink); border-color: var(--ink);
 .st-key-dpad button { width: 100%; min-height: 3.2rem; border-radius: 14px; background: var(--ink); color: var(--gul); border: none; }
 .st-key-dpad button p { font-weight: 700; color: inherit; }
 .st-key-dpad button:hover, .st-key-dpad button:focus, .st-key-dpad button:active { background: var(--ink-ljus); color: var(--gul); border: none; }
-.st-key-dpad button:disabled { background: var(--dimma); color: #7A879B; }
+.st-key-dpad button:disabled { background: var(--dimma); color: #55627A; }
+.st-key-lasknappar { max-width: 380px; margin: 0.4rem auto 0; }
+.st-key-lasknappar [data-testid="stHorizontalBlock"] { flex-wrap: nowrap !important; gap: 0.5rem; }
+.st-key-lasknappar [data-testid="stColumn"] { flex: 1 1 0 !important; min-width: 0 !important; width: auto !important; }
+.st-key-lasknappar button { background: var(--vit); color: var(--ink); border: 2px dashed var(--ink); border-radius: 12px; }
+.st-key-lasknappar button p { font-size: 0.9rem; font-weight: 700; color: inherit; }
+.st-key-lasknappar button:disabled { border-color: var(--dimma); color: #7A879B; }
 .dpad-mitt { display: flex; justify-content: center; align-items: center; height: 3.2rem; }
 
 .stApp button[kind="primary"], .stApp [data-testid="stBaseButton-primary"] { background: var(--gul); color: var(--ink); border: none; font-weight: 700; }
@@ -847,7 +858,22 @@ def fragedel(nyckel):
 def rita_styrkors(x, y):
     ss = st.session_state
     dorrar = ss.labyrint[(x, y)]
-    oppna = {r for r in dorrar if granne(x, y, r) not in ss.forbrukade}
+
+    def lage(r):
+        """Varför man kan eller inte kan flyga åt ett håll."""
+        if not i_rutnat(*granne(x, y, r)):
+            return "kant"
+        if granne(x, y, r) in ss.forbrukade:
+            return "forbrukad"
+        return "oppen" if r in dorrar else "stangd"
+
+    etikett = {
+        "oppen": lambda r: ETIKETTER[r],
+        "stangd": lambda r: f"🔒 {VADERSTRECK[r].capitalize()}",
+        "forbrukad": lambda r: f"⛔ {VADERSTRECK[r].capitalize()}",
+        "kant": lambda r: "Kanten",
+    }
+
     visa_html('<div class="rubrik">Flyg vidare</div>')
     with st.container(key="dpad"):
         rader = [[None, "W", None], ["A", "mitt", "D"], [None, "S", None]]
@@ -859,14 +885,35 @@ def rita_styrkors(x, y):
                         visa_html(f'<div class="dpad-mitt">{mitt_plan(64)}</div>')
                     elif r is not None:
                         if st.button(
-                            ETIKETTER[r],
+                            etikett[lage(r)](r),
                             key=f"dorr_{r}",
-                            disabled=r not in oppna,
+                            disabled=lage(r) != "oppen",
                             use_container_width=True,
                         ):
                             flytta(r)
-    if any(granne(x, y, r) in ss.forbrukade for r in dorrar):
-        visa_html('<p class="forsok">⛔ Rutor du har svarat fel på tre gånger går inte att flyga till.</p>')
+
+    stangda = [r for r in KNAPPORDNING if lage(r) == "stangd"]
+    if stangda:
+        visa_html(
+            f'<p class="dpad-info">🔒 betyder att dörren är stängd. Du kan öppna den för {DORR_PRIS} poäng.</p>'
+        )
+        with st.container(key="lasknappar"):
+            kolumner = st.columns(len(stangda))
+            for kol, r in zip(kolumner, stangda):
+                with kol:
+                    if st.button(
+                        f"🔓 Öppna mot {VADERSTRECK[r]}",
+                        key=f"oppna_{r}",
+                        disabled=ss.poang < DORR_PRIS,
+                        use_container_width=True,
+                    ):
+                        ss.poang -= DORR_PRIS
+                        oppna_dorr(ss.labyrint, x, y, r)
+                        st.rerun()
+        if ss.poang < DORR_PRIS:
+            visa_html(f'<p class="dpad-info">Du behöver minst {DORR_PRIS} poäng för att öppna en dörr.</p>')
+    if any(lage(r) == "forbrukad" for r in RIKTNINGAR):
+        visa_html('<p class="dpad-info">⛔ Rutor du har svarat fel på tre gånger går inte att flyga till.</p>')
 
 
 def startskarm():
