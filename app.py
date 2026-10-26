@@ -274,24 +274,43 @@ ETIKETTER = {"W": "↑ Norr", "A": "← Väster", "D": "Öster →", "S": "↓ S
 KNAPPORDNING = ["W", "A", "D", "S"]
 VADERSTRECK = {"W": "norr", "A": "väster", "D": "öster", "S": "söder"}
 
+# Spelreglerna som (rubrik, text). Siffrorna hämtas från inställningarna ovan,
+# så reglerna stämmer även om någon ändrar svårighetsgraden.
+REGLER_MAL = "Flyg hela vägen från startrutan till målet!"
 REGLER = [
-    "Spelet går ut på att flyga från startrutan till målet.",
-    f"Spelplanen är hundra rutor ordnade i {STORLEK} rader med {STORLEK} rutor i varje rad. "
-    "Startrutan ligger vid en kant av spelplanen och målet vid en annan kant.",
-    f"I varje ny ruta ser du en bild som ska ge dig en ledtråd om var du har landat, "
-    f"och du har {int(TIDSGRANS)} sekunder på dig att svara i vilken stad du landat.",
-    f"Svarar du rätt första gången får du {POANG_PER_FORSOK[0]} poäng. Svarar du fel kan du "
-    f"komma tillbaka och försöka igen: rätt svar på andra försöket ger {POANG_PER_FORSOK[1]} "
-    f"poäng och på tredje försöket {POANG_PER_FORSOK[2]} poäng.",
-    f"Svarar du fel {MAX_FORSOK} gånger är rutan förbrukad, och då kan du inte landa där igen. "
-    f"Får du {MAX_FORBRUKADE} förbrukade rutor är spelet slut.",
-    "En pil visar ungefär åt vilket håll målet ligger: norr, öster, söder eller väster.",
-    f"Varje förflyttning kostar bränsle. Tanken är full när du startar, och för varje rätt "
-    f"svar fylls den på {PAFYLLNING} steg. Tar bränslet slut är spelet över.",
-    "Alla rutor har inte öppna dörrar åt alla håll. En stängd dörr visas med ett lås, "
-    f"och du kan öppna den för {DORR_PRIS} poäng.",
-    "Du kan landa i en ruta som redan är avklarad, men då är det bara att flyga vidare.",
+    ("Spelplanen",
+     f"{STORLEK * STORLEK} rutor ({STORLEK} × {STORLEK}). Starten ligger vid en kant och "
+     "målet vid en annan, men du vet inte var."),
+    ("Gissa staden",
+     f"I varje ny ruta får du en bild som ledtråd och {int(TIDSGRANS)} sekunder på dig att "
+     "svara. Hinner du inte räknas det som fel."),
+    ("Samla poäng",
+     f"Rätt direkt ger {POANG_PER_FORSOK[0]} poäng. Svarar du fel kan du komma tillbaka: "
+     f"rätt på andra försöket ger {POANG_PER_FORSOK[1]} poäng och på tredje "
+     f"{POANG_PER_FORSOK[2]} poäng."),
+    ("Se upp för nitlott",
+     f"{MAX_FORSOK} fel svar spärrar rutan, och du kan inte flyga dit igen. Får du "
+     f"{MAX_FORBRUKADE} spärrade rutor är spelet slut."),
+    ("Kompass",
+     "En pil visar ungefär åt vilket håll målet ligger: norr, söder, öster eller väster. "
+     "Den tar ingen hänsyn till väggar."),
+    ("Kolla tanken",
+     f"Varje drag kostar bränsle. Du börjar med full tank och fyller på {PAFYLLNING} steg "
+     "för varje rätt svar, men aldrig mer än full. Får du slut på bensin är det game over, "
+     "utom om du når målet på sista droppen."),
+    ("Låsta dörrar",
+     f"Vissa vägar är låsta, men du kan låsa upp dem för {DORR_PRIS} poäng."),
+    ("Återbesök",
+     "Du kan landa i rutor du redan klarat och flyga vidare, men du får ingen fråga och "
+     "därmed inget bränsle."),
 ]
+
+
+def regler_html():
+    stycken = "".join(
+        f'<p class="regler"><b>{rubrik}:</b> {text}</p>' for rubrik, text in REGLER
+    )
+    return f'<p class="regler-mal"><b>Målet:</b> {REGLER_MAL}</p>{stycken}'
 
 
 # ==========================================
@@ -612,6 +631,8 @@ font-family: 'Atkinson Hyperlegible', system-ui, -apple-system, sans-serif;
 .hangar { display: flex; justify-content: center; padding: 1.5rem 0 1rem; }
 .hangar svg { filter: drop-shadow(0 8px 6px rgba(20,33,61,0.25)); }
 .regler { color: var(--gra); font-size: 1rem; line-height: 1.5; margin: 0 0 0.7rem; }
+.regler b { color: var(--ink); }
+.regler-mal { color: var(--ink); font-size: 1.1rem; line-height: 1.5; margin: 0 0 0.9rem; }
 
 .st-key-fragekort { background: var(--vit); border-radius: 18px; padding: 1rem 1rem 1.2rem; }
 
@@ -915,7 +936,7 @@ def rita_styrkors(x, y):
         if ss.poang < DORR_PRIS:
             visa_html(f'<p class="dpad-info">Du behöver minst {DORR_PRIS} poäng för att öppna en dörr.</p>')
     if any(lage(r) == "forbrukad" for r in RIKTNINGAR):
-        visa_html('<p class="dpad-info">⛔ Rutor du har svarat fel på tre gånger går inte att flyga till.</p>')
+        visa_html('<p class="dpad-info">⛔ Spärrade rutor går inte att flyga till.</p>')
 
 
 def startskarm():
@@ -933,7 +954,7 @@ def startskarm():
         label_visibility="collapsed",
     )
     visa_html(f'<div class="hangar">{mitt_plan(240)}</div>')
-    visa_html("".join(f'<p class="regler">{stycke}</p>' for stycke in REGLER))
+    visa_html(regler_html())
     if st.button("Starta resan", type="primary", use_container_width=True):
         ss.spel_startat = True
         st.rerun()
@@ -952,8 +973,7 @@ if "spel_startat" not in ss or "bransle" not in ss:
 
 with st.sidebar:
     st.header("Så spelar du")
-    for stycke in REGLER:
-        st.write(stycke)
+    visa_html(regler_html())
     if ss.spel_startat:
         st.divider()
         if st.button("Börja om och byt flygplan", type="primary", use_container_width=True):
@@ -1076,9 +1096,9 @@ with st.container(key="fragekort"):
         elif rum["fel"] >= MAX_FORSOK:
             fel_text = "Tiden tog slut igen." if rum["tiden_ute"] else "Fel svar igen."
             visa_html(
-                f'<div class="resultat fel">{fel_text} <span>Rutan är nu förbrukad, '
+                f'<div class="resultat fel">{fel_text} <span>Rutan är nu spärrad, '
                 f'och du kan inte landa här fler gånger. Du har {ss.antal_forbrukade} av '
-                f'{MAX_FORBRUKADE} förbrukade rutor.</span></div>'
+                f'{MAX_FORBRUKADE} spärrade rutor.</span></div>'
             )
             visa_fakta(rum, "Rätt svar:")
         else:
