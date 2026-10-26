@@ -23,6 +23,7 @@ POANG_PER_FORSOK = [100, 50, 25]  # poäng för rätt svar på första, andra oc
 MAX_FORSOK = len(POANG_PER_FORSOK)  # så många fel svar innan rutan är förbrukad
 MAX_FORBRUKADE = 5    # så många förbrukade rutor innan spelet avbryts
 MAX_BRANSLE = 4       # full tank: 4 = full, 3 = nästan full, 2 = halvfull, 1 = nästan tom, 0 = tom
+PAFYLLNING = 2        # så många staplar ett rätt svar fyller på
 BRANSLE_LAGEN = {
     4: ("Full", "#34C759"),
     3: ("Nästan full", "#34C759"),
@@ -283,8 +284,8 @@ REGLER = [
     f"Svarar du fel {MAX_FORSOK} gånger är rutan förbrukad, och då kan du inte landa där igen. "
     f"Får du {MAX_FORBRUKADE} förbrukade rutor är spelet slut.",
     "En pil visar ungefär åt vilket håll målet ligger: norr, öster, söder eller väster.",
-    "Varje förflyttning kostar bränsle. Tanken är full när du startar, och för varje rätt "
-    "svar fylls den på ett steg. Tar bränslet slut är spelet över.",
+    f"Varje förflyttning kostar bränsle. Tanken är full när du startar, och för varje rätt "
+    f"svar fylls den på {PAFYLLNING} steg. Tar bränslet slut är spelet över.",
     "Du kan landa i en ruta som redan är avklarad, men då är det bara att flyga vidare.",
 ]
 
@@ -514,8 +515,9 @@ def ratt_svar(rum):
     rum["klarad"] = True
     rum["fick_poang"] = POANG_PER_FORSOK[rum["fel"]]
     ss.poang += rum["fick_poang"]
-    rum["tankade"] = ss.bransle < MAX_BRANSLE
-    ss.bransle = min(MAX_BRANSLE, ss.bransle + 1)
+    fore = ss.bransle
+    ss.bransle = min(MAX_BRANSLE, ss.bransle + PAFYLLNING)
+    rum["tankade"] = ss.bransle - fore
 
 
 def fel_svar(rum, nyckel, tiden_ute=False):
@@ -1017,7 +1019,8 @@ with st.container(key="fragekort"):
             visa_fakta(rum, "Rätt!")
             visa_html(
                 f'<div class="resultat ratt">+{rum["fick_poang"]} poäng <span>'
-                + ("⛽ Tanken fylldes på ett steg." if rum.get("tankade") else "⛽ Tanken är full.")
+                + ({0: "⛽ Tanken är full.", 1: "⛽ Tanken fylldes på ett steg och är nu full."}
+                   .get(rum.get("tankade", 0), "⛽ Tanken fylldes på två steg."))
                 + "</span></div>"
             )
         elif rum["fel"] >= MAX_FORSOK:
