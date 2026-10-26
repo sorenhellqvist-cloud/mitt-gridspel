@@ -615,11 +615,13 @@ font-family: 'Atkinson Hyperlegible', system-ui, -apple-system, sans-serif;
 
 .st-key-fragekort { background: var(--vit); border-radius: 18px; padding: 1rem 1rem 1.2rem; }
 
-.scen { position: relative; border-radius: 14px; overflow: hidden; background: var(--dimma); }
+/* Bilderna är kvadratiska, så scenen är också kvadratisk. */
+.scen { position: relative; border-radius: 14px; overflow: hidden; background: var(--dimma);
+  width: 100%; max-width: 460px; aspect-ratio: 1 / 1; margin: 0 auto; }
 /* Streamlit ger bilder i markdown egen bredd, därför !important. */
-.stApp .scen img.scen-bild { display: block; width: 100% !important; max-width: none !important; height: 260px !important; object-fit: cover; margin: 0 !important; }
-.scen-himmel { height: 260px; background: linear-gradient(180deg, #9CC3EB 0%, #DCEBF8 100%); }
-.scen-saknas { height: 260px; display: flex; align-items: center; justify-content: center; color: var(--gra); text-align: center; padding: 1rem; }
+.stApp .scen img.scen-bild { display: block; width: 100% !important; max-width: none !important; height: 100% !important; object-fit: cover; margin: 0 !important; }
+.scen-himmel { height: 100%; background: linear-gradient(180deg, #9CC3EB 0%, #DCEBF8 100%); }
+.scen-saknas { height: 100%; display: flex; align-items: center; justify-content: center; color: var(--gra); text-align: center; padding: 1rem; }
 .bana { position: absolute; left: 0; right: 0; bottom: 0; height: 30px; background: rgba(20,33,61,0.85); }
 .bana::after {
 content: ""; position: absolute; left: 6%; right: 6%; top: 50%; height: 3px; transform: translateY(-50%);
