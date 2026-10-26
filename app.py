@@ -22,9 +22,10 @@ AVGANGSTID = 1.5      # sekunder som planet lyfter innan det flyger till nästa 
 POANG_PER_FORSOK = [100, 50, 25]  # poäng för rätt svar på första, andra och tredje försöket
 MAX_FORSOK = len(POANG_PER_FORSOK)  # så många fel svar innan rutan är förbrukad
 MAX_FORBRUKADE = 5    # så många förbrukade rutor innan spelet avbryts
-MAX_BRANSLE = 3       # full tank: 3 = full, 2 = halvfull, 1 = nästan tom, 0 = tom
+MAX_BRANSLE = 4       # full tank: 4 = full, 3 = nästan full, 2 = halvfull, 1 = nästan tom, 0 = tom
 BRANSLE_LAGEN = {
-    3: ("Full", "#34C759"),
+    4: ("Full", "#34C759"),
+    3: ("Nästan full", "#34C759"),
     2: ("Halvfull", "#FFC93C"),
     1: ("Nästan tom", "#FF5A5F"),
     0: ("Tom", "#7A879B"),
@@ -145,6 +146,22 @@ FRAGE_BANK = [
      "falska_stader": ["Paris", "Marseille", "Bordeaux", "Lille", "Genève", "Valencia"],
      "fakta": "En järnvägsstation vid flygplatsen, ritad av arkitekten Santiago Calatrava och öppnad 1994. Byggnaden ser ut som en fågel med utbredda vingar. Flygplatsen är uppkallad efter författaren till Lille prinsen, som föddes i staden."},
 
+    {"landmark": "Blå lagunen", "ratt_stad": "Grindavík", "bild": " reykjavik_blå-lagunen.png",
+     "falska_stader": ["Reykjavik", "Akureyri", "Keflavík", "Tórshavn", "Nuuk", "Bergen"],
+     "fakta": "Ett utomhusbad med mjölkblått, varmt vatten mitt i ett lavafält. Vattnet kommer från ett geotermiskt kraftverk i närheten och är fullt av mineraler."},
+    {"landmark": "Gamla staden", "ratt_stad": "Dubrovnik", "bild": "dubrovnik_gamla-staden.png",
+     "falska_stader": ["Split", "Kotor", "Venedig", "Zadar", "Valletta", "Sarajevo"],
+     "fakta": "En medeltida stad som omges av nästan två kilometer långa stadsmurar. Den finns på Unescos världsarvslista och har använts som inspelningsplats för tv-serien Game of Thrones."},
+    {"landmark": "Groninger Museum", "ratt_stad": "Groningen", "bild": "groninger_groninger-museum.png",
+     "falska_stader": ["Amsterdam", "Rotterdam", "Utrecht", "Eindhoven", "Bremen", "Antwerpen"],
+     "fakta": "Ett färgglatt konstmuseum från 1994 som ligger på en ö i kanalen. Flera olika arkitekter ritade varsin del, därför ser byggnaderna så olika ut."},
+    {"landmark": "Kronborgs slott", "ratt_stad": "Helsingør", "bild": "helsingör_kronborg.png",
+     "falska_stader": ["Helsingborg", "Köpenhamn", "Malmö", "Odense", "Landskrona", "Roskilde"],
+     "fakta": "Ett renässansslott vid Öresunds smalaste del, där Danmark förr tog ut tull av alla fartyg som passerade. Shakespeares pjäs Hamlet utspelar sig här."},
+    {"landmark": "Mozarts födelsehus", "ratt_stad": "Salzburg", "bild": "salzburg_mozarts-birthplace.png",
+     "falska_stader": ["Wien", "Innsbruck", "München", "Prag", "Graz", "Linz"],
+     "fakta": "Kompositören Wolfgang Amadeus Mozart föddes 1756 i det här gula huset på gatan Getreidegasse. I dag är det ett museum om hans liv."},
+
     # --- Nordamerika ---
     {"landmark": "Frihetsgudinnan", "ratt_stad": "New York", "bild": "new-york_frihetsgudinnan.png",
      "falska_stader": ["Boston", "Philadelphia", "Washington", "Chicago", "Paris", "Toronto"],
@@ -169,6 +186,13 @@ FRAGE_BANK = [
     {"landmark": "Bensinstationen Union 76", "ratt_stad": "Beverly Hills", "bild": "beverly-hills_union-76-gas-station.png",
      "falska_stader": ["Los Angeles", "Santa Monica", "Las Vegas", "San Diego", "Palm Springs", "Phoenix"],
      "fakta": "En bensinstation från 1965 med ett svävande, böjt tak. Den är ett känt exempel på 1960-talets futuristiska arkitektur, som var inspirerad av rymdåldern."},
+
+    {"landmark": "Graceland", "ratt_stad": "Memphis", "bild": "memphis_graceland.png",
+     "falska_stader": ["Nashville", "Tupelo", "New Orleans", "Las Vegas", "Atlanta", "Dallas"],
+     "fakta": "Rockstjärnan Elvis Presleys hem från 1957 till hans död 1977. I dag är det ett museum, och Elvis ligger begravd i trädgården."},
+    {"landmark": "Château Frontenac", "ratt_stad": "Québec", "bild": "quebec_château-rontenac.png",
+     "falska_stader": ["Montréal", "Ottawa", "Toronto", "Halifax", "Boston", "Edinburgh"],
+     "fakta": "Ett hotell från 1893 som tornar upp sig över floden Saint Lawrence och ser ut som ett slott. Det sägs vara ett av världens mest fotograferade hotell."},
 
     # --- Asien ---
     {"landmark": "Hagia Sofia", "ratt_stad": "Istanbul", "bild": "istanbul_hagia-sofia.png",
@@ -576,7 +600,7 @@ font-family: 'Atkinson Hyperlegible', system-ui, -apple-system, sans-serif;
 .tavla-del .tavla-liten { line-height: 1.25; min-height: 2.15rem; }
 .pil { font-size: 2.6rem; }
 .tank { display: flex; gap: 4px; margin: 0.45rem 0 0.35rem; }
-.tank-steg { display: block; width: 26px; height: 22px; border-radius: 4px; }
+.tank-steg { display: block; width: 20px; height: 22px; border-radius: 4px; }
 .tank-text { font-size: 0.85rem; font-weight: 700; color: var(--vit); }
 
 .hangar { display: flex; justify-content: center; padding: 1.5rem 0 1rem; }
