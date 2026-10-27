@@ -164,6 +164,28 @@ FRAGE_BANK = [
      "falska_stader": ["Wien", "Innsbruck", "München", "Prag", "Graz", "Linz"],
      "fakta": "Kompositören Wolfgang Amadeus Mozart föddes 1756 i det här gula huset på gatan Getreidegasse. I dag är det ett museum om hans liv."},
 
+    {"landmark": "Holstentor", "ratt_stad": "Lübeck", "bild": "Lubeck_holstentor.png",
+     "falska_stader": ["Hamburg", "Bremen", "Rostock", "Stralsund", "Gdańsk", "Riga"],
+     "fakta": "En stadsport i tegel från 1478 och en symbol för Hansan, handelsförbundet som styrde handeln i Östersjön. Porten har sjunkit ojämnt ned i den mjuka marken och lutar."},
+    {"landmark": "De romerska baden", "ratt_stad": "Bath", "bild": "bath_roman-baths.png",
+     "falska_stader": ["York", "Chester", "Oxford", "Bristol", "Cambridge", "Rom"],
+     "fakta": "Romarna byggde badhus kring stadens varma källor för nästan 2000 år sedan. Vattnet håller fortfarande runt 46 grader, och staden har fått sitt namn efter baden."},
+    {"landmark": "Varvskranarna Samson och Goliat", "ratt_stad": "Belfast", "bild": "belfast_samson-goliat-crane.png",
+     "falska_stader": ["Glasgow", "Dublin", "Liverpool", "Southampton", "Cork", "Newcastle"],
+     "fakta": "Två jättelika gula kranar från 1970-talet på varvet Harland & Wolff. Det är samma varv där Titanic byggdes."},
+    {"landmark": "John Lennons barndomshem", "ratt_stad": "Liverpool", "bild": "liverpool_251-menlove-avenue.png",
+     "falska_stader": ["London", "Manchester", "Hamburg", "Leeds", "Birmingham", "Glasgow"],
+     "fakta": "Huset på Menlove Avenue där John Lennon växte upp hos sin moster Mimi. Här skrev han några av Beatles första låtar. I dag är huset ett museum."},
+    {"landmark": "Café des 2 Moulins", "ratt_stad": "Paris", "bild": "paris_cafe-des-2-moulins.png",
+     "falska_stader": ["Lyon", "Bryssel", "Marseille", "Montréal", "Genève", "Bordeaux"],
+     "fakta": "Ett kafé i stadsdelen Montmartre som blev känt genom filmen Amélie från Montmartre 2001. Det är här Amélie arbetar som servitris."},
+    {"landmark": "Pragborgen", "ratt_stad": "Prag", "bild": "pragborgen__prag.png",
+     "falska_stader": ["Wien", "Budapest", "Kraków", "Bratislava", "Dresden", "Ljubljana"],
+     "fakta": "Ett av världens största borgområden, med palats, kyrkor och trädgårdar. Här har kungar styrt i över tusen år, och i dag arbetar Tjeckiens president här."},
+    {"landmark": "Stortorget", "ratt_stad": "Stockholm", "bild": "stortorget_stockholm.png",
+     "falska_stader": ["Göteborg", "Köpenhamn", "Tallinn", "Riga", "Amsterdam", "Brygge"],
+     "fakta": "Stadens äldsta torg, mitt i Gamla stan. Här skedde Stockholms blodbad 1520, och i Börshuset vid torget finns i dag ett museum om Nobelpriset."},
+
     # --- Nordamerika ---
     {"landmark": "Frihetsgudinnan", "ratt_stad": "New York", "bild": "new-york_frihetsgudinnan.png",
      "falska_stader": ["Boston", "Philadelphia", "Washington", "Chicago", "Paris", "Toronto"],
@@ -196,7 +218,19 @@ FRAGE_BANK = [
      "falska_stader": ["Montréal", "Ottawa", "Toronto", "Halifax", "Boston", "Edinburgh"],
      "fakta": "Ett hotell från 1893 som tornar upp sig över floden Saint Lawrence och ser ut som ett slott. Det sägs vara ett av världens mest fotograferade hotell."},
 
+    {"landmark": "Burrard Bridge", "ratt_stad": "Vancouver", "bild": "vancouver_burrard-bridge.png",
+     "falska_stader": ["Seattle", "Toronto", "Portland", "Victoria", "Calgary", "San Francisco"],
+     "fakta": "En bro över viken False Creek som invigdes 1932. Tornen vid brofästena är byggda i art déco-stil, som var modern på den tiden."},
+
+    # --- Sydamerika ---
+    {"landmark": "Copacabana", "ratt_stad": "Rio de Janeiro", "bild": "rio-de-janeiro_copacabana.png",
+     "falska_stader": ["São Paulo", "Buenos Aires", "Salvador", "Montevideo", "Lissabon", "Havanna"],
+     "fakta": "En fyra kilometer lång sandstrand. Strandpromenaden är belagd med svarta och vita stenar i ett vågmönster, och varje nyårsafton firar miljontals människor här."},
+
     # --- Asien ---
+    {"landmark": "HSBC:s huvudkontor", "ratt_stad": "Hongkong", "bild": "hon-kong_hsbc-main-building.png",
+     "falska_stader": ["Shanghai", "Singapore", "Taipei", "Macao", "Shenzhen", "Tokyo"],
+     "fakta": "En skyskrapa från 1985 som ritades av arkitekten Norman Foster. Stommen sitter på utsidan, så våningarna inne i huset blir öppna och fria från pelare."},
     {"landmark": "Hagia Sofia", "ratt_stad": "Istanbul", "bild": "istanbul_hagia-sofia.png",
      "falska_stader": ["Aten", "Ankara", "Kairo", "Sofia", "Thessaloniki", "Izmir"],
      "fakta": "Byggdes som kyrka år 537 och blev moské 1453. Senare var den museum i många år, och sedan 2020 är den moské igen."},
