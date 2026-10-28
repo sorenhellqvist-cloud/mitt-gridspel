@@ -227,6 +227,13 @@ FRAGE_BANK = [
      "falska_stader": ["São Paulo", "Buenos Aires", "Salvador", "Montevideo", "Lissabon", "Havanna"],
      "fakta": "En fyra kilometer lång sandstrand. Strandpromenaden är belagd med svarta och vita stenar i ett vågmönster, och varje nyårsafton firar miljontals människor här."},
 
+    {"landmark": "Nationalkongressen", "ratt_stad": "Brasília", "bild": "kongresbyggnaden_brasília.png",
+     "falska_stader": ["Rio de Janeiro", "São Paulo", "Buenos Aires", "Montevideo", "Santiago", "Lima"],
+     "fakta": "Ritades av arkitekten Oscar Niemeyer och invigdes 1960, när staden byggdes från grunden för att bli Brasiliens nya huvudstad. Den ena kupolen vänder uppåt och den andra nedåt, en för varje del av parlamentet."},
+    {"landmark": "Teatro Amazonas", "ratt_stad": "Manaus", "bild": "teatro-amazonas_manaus.png",
+     "falska_stader": ["Belém", "Iquitos", "Rio de Janeiro", "Salvador", "Bogotá", "Lima"],
+     "fakta": "Ett operahus från 1896 mitt i Amazonas regnskog, byggt när staden blev rik på naturgummi. Kupolen är täckt av tusentals kakelplattor i den brasilianska flaggans färger."},
+
     # --- Asien ---
     {"landmark": "HSBC:s huvudkontor", "ratt_stad": "Hongkong", "bild": "hon-kong_hsbc-main-building.png",
      "falska_stader": ["Shanghai", "Singapore", "Taipei", "Macao", "Shenzhen", "Tokyo"],
